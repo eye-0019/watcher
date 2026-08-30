@@ -34,18 +34,18 @@ module.exports = {
         if (sub === 'add') {
             const keyword = interaction.options.getString('keyword');
             const response = interaction.options.getString('response');
-            addCommand(keyword, response);
+            await addCommand(keyword, response);
             return interaction.reply(`Added custom command: \`${keyword}\` → ${response}`);
         }
 
         if (sub === 'remove') {
             const keyword = interaction.options.getString('keyword');
-            const removed = removeCommand(keyword);
+            const removed = await removeCommand(keyword);
             return interaction.reply(removed ? `Removed custom command \`${keyword}\`.` : `No custom command found for \`${keyword}\`.`);
         }
 
         if (sub === 'list') {
-            const commands = listCommands();
+            const commands = await listCommands();
             const entries = Object.entries(commands);
             if (entries.length === 0) {
                 return interaction.reply('No custom commands set up yet.');
