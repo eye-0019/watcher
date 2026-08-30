@@ -19,7 +19,7 @@ module.exports = {
             return interaction.reply({ content: 'Could not find that member.', ephemeral: true });
         }
 
-        const removed = removeLastWarning(target.id);
+        const removed = await removeLastWarning(target.id);
         if (!removed) {
             return interaction.reply({ content: `${target.user.tag} has no warnings to remove.`, ephemeral: true });
         }
