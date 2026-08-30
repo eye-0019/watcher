@@ -40,6 +40,7 @@ module.exports = {
         if (message.author.bot) return;
 
         if (message.guild) {
+            // If this channel is an open DM ticket, forward whatever staff types back to the user's DMs
             const ticketUserId = getUserForChannel(message.channel.id);
             if (ticketUserId) {
                 const user = await client.users.fetch(ticketUserId).catch(() => null);
@@ -49,6 +50,19 @@ module.exports = {
                 return;
             }
 
+            // Pics-only channel: delete anything without an image, react to add up/down voting on images
+            const picsChannelId = process.env.PICS_CHANNEL_ID;
+            if (picsChannelId && message.channel.id === picsChannelId) {
+                const hasImage = message.attachments.some(a => a.contentType?.startsWith('image/'));
+                if (!hasImage) {
+                    message.delete().catch(() => {});
+                } else {
+                    message.react('⬆️').then(() => message.react('⬇️')).catch(() => {});
+                }
+                return;
+            }
+
+            // Anti-spam: too many messages too fast gets an auto-timeout
             const isSpamming = trackMessage(message.guild.id, message.author.id);
             if (isSpamming) {
                 message.delete().catch(() => {});
@@ -69,11 +83,13 @@ module.exports = {
                 return;
             }
 
+            // Leveling/XP
             const result = addMessageXp(message.author.id);
             if (result && result.leveledUp) {
                 message.channel.send(`🎉 ${message.author} leveled up to **level ${result.newLevel}**!`).catch(() => {});
             }
 
+            // Custom keyword-triggered commands (first word of the message)
             const firstWord = message.content.trim().split(/\s+/)[0];
             if (firstWord) {
                 const response = getResponse(firstWord);
@@ -85,6 +101,7 @@ module.exports = {
             return;
         }
 
+        // A DM sent to the bot: open (or reuse) a private ticket channel and post what they said
         const channel = await getOrCreateTicketChannel(client, message.author);
         if (!channel) return;
 
