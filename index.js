@@ -1,7 +1,15 @@
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
 require('dotenv').config();
+
+// Minimal web server so free hosts (like Render) that require a listening port
+// treat the bot as a healthy web service. It doesn't do anything else.
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Watcher bot is running');
+}).listen(process.env.PORT || 3000);
 
 const client = new Client({
     intents: [
