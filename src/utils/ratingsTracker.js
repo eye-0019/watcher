@@ -1,4 +1,5 @@
-const { loadData, setCount, resolveLeaders, setHolder } = require('./ratingsStore');
+const { setCount, resolveLeaders, getHolder, setHolder } = require('./ratingsStore');
+const { updateLiveRatingLeaderboard } = require('./liveLeaderboard');
 
 // Called whenever an up/down reaction is added or removed on a message in the pics channel.
 // Recomputes both title-holders (they can never be the same person) and swaps roles as needed.
@@ -25,12 +26,12 @@ async function updateRatings(reaction) {
     if (!uglyRoleId || !hotRoleId) return;
 
     const count = Math.max(0, reaction.count - 1); // exclude the bot's own reaction
-    const data = setCount(category, message.id, message.author.id, count);
+    await setCount(category, message.id, message.author.id, count);
 
-    const oldUglyHolder = data.ugly.holder;
-    const oldHotHolder = data.hot.holder;
+    const oldUglyHolder = await getHolder('ugly');
+    const oldHotHolder = await getHolder('hot');
 
-    const { uglyLeader, hotLeader } = resolveLeaders(data);
+    const { uglyLeader, hotLeader } = await resolveLeaders();
 
     if (uglyLeader !== oldUglyHolder) {
         if (oldUglyHolder) {
@@ -41,7 +42,7 @@ async function updateRatings(reaction) {
             const newMember = await message.guild.members.fetch(uglyLeader).catch(() => null);
             if (newMember) newMember.roles.add(uglyRoleId).catch(() => {});
         }
-        setHolder('ugly', uglyLeader, data);
+        await setHolder('ugly', uglyLeader);
     }
 
     if (hotLeader !== oldHotHolder) {
@@ -53,8 +54,10 @@ async function updateRatings(reaction) {
             const newMember = await message.guild.members.fetch(hotLeader).catch(() => null);
             if (newMember) newMember.roles.add(hotRoleId).catch(() => {});
         }
-        setHolder('hot', hotLeader, data);
+        await setHolder('hot', hotLeader);
     }
+
+    updateLiveRatingLeaderboard(message.client).catch(() => {});
 }
 
 module.exports = { updateRatings };
