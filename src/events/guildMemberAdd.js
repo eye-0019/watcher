@@ -11,13 +11,13 @@ module.exports = {
         // Raid protection
         const raidJustDetected = recordJoin(member.guild.id);
         if (raidJustDetected && logChannel) {
-            logChannel.send('🚨 **Possible raid detected** — a burst of joins just came in. Auto-kicking brand new accounts for the next couple minutes.').catch(() => {});
+            logChannel.send('**Possible raid detected** — a burst of joins just came in. Auto-kicking brand new accounts for the next couple minutes.').catch(() => {});
         }
 
         if (isRaidActive(member.guild.id) && isAccountTooNew(member.user)) {
             member.kick('Auto anti-raid: brand new account during a join burst').catch(() => {});
             if (logChannel) {
-                logChannel.send(`🚨 Auto-kicked ${member.user.tag} (account too new) during an active raid window.`).catch(() => {});
+                logChannel.send(`Auto-kicked ${member.user.tag} (account too new) during an active raid window.`).catch(() => {});
             }
             return;
         }
@@ -25,7 +25,7 @@ module.exports = {
         const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
         const welcomeChannel = welcomeChannelId ? member.guild.channels.cache.get(welcomeChannelId) : null;
         if (welcomeChannel) {
-            welcomeChannel.send(`Welcome ${member} to the server! 🎉`).catch(() => {});
+            welcomeChannel.send(`Welcome ${member} to the server!`).catch(() => {});
         }
 
         const memberRoleId = process.env.MEMBER_ROLE_ID;
