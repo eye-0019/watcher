@@ -12,7 +12,7 @@ module.exports = {
 
     async execute(interaction) {
         const target = interaction.options.getUser('target') || interaction.user;
-        const user = getUser(target.id);
+        const user = await getUser(target.id);
 
         const embed = new EmbedBuilder()
             .setColor(0x5865F2)
