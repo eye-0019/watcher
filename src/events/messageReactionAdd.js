@@ -1,4 +1,5 @@
 const { getRoleId } = require('../utils/reactionRolesStore');
+const { updateRatings } = require('../utils/ratingsTracker');
 
 module.exports = {
     name: 'messageReactionAdd',
@@ -8,6 +9,9 @@ module.exports = {
         if (reaction.partial) {
             try { await reaction.fetch(); } catch { return; }
         }
+
+        // Pics-channel up/down vote rating (Ugliest/Good Looking roles)
+        updateRatings(reaction).catch(() => {});
 
         const emojiKey = reaction.emoji.id ? `<:${reaction.emoji.name}:${reaction.emoji.id}>` : reaction.emoji.name;
         const roleId = getRoleId(reaction.message.id, emojiKey);
