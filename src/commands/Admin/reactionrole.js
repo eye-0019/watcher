@@ -32,7 +32,7 @@ module.exports = {
             return interaction.reply({ content: 'Could not find that message in this channel, or the emoji is invalid.', ephemeral: true });
         }
 
-        addReactionRole(messageId, emoji, role.id);
+        await addReactionRole(messageId, emoji, role.id);
         return interaction.reply(`Reacting with ${emoji} on that message now assigns the **${role.name}** role.`);
     }
 };
