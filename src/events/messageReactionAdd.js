@@ -14,7 +14,7 @@ module.exports = {
         updateRatings(reaction).catch(() => {});
 
         const emojiKey = reaction.emoji.id ? `<:${reaction.emoji.name}:${reaction.emoji.id}>` : reaction.emoji.name;
-        const roleId = getRoleId(reaction.message.id, emojiKey);
+        const roleId = await getRoleId(reaction.message.id, emojiKey);
         if (!roleId) return;
 
         const member = await reaction.message.guild.members.fetch(user.id).catch(() => null);
