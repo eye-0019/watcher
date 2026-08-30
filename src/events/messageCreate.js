@@ -93,7 +93,7 @@ module.exports = {
             // Leveling/XP
             const result = addMessageXp(message.author.id);
             if (result && result.leveledUp) {
-                message.channel.send(`🎉 ${message.author} leveled up to **level ${result.newLevel}**!`).catch(() => {});
+                message.channel.send(`${message.author} leveled up to **level ${result.newLevel}**!`).catch(() => {});
             }
 
             // Custom keyword-triggered commands (first word of the message)
