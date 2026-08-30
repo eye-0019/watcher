@@ -7,7 +7,7 @@ module.exports = {
         .setDescription('Show the top members by level/XP'),
 
     async execute(interaction) {
-        const top = getLeaderboard(10);
+        const top = await getLeaderboard(10);
 
         if (top.length === 0) {
             return interaction.reply('No one has earned any XP yet.');
@@ -17,7 +17,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(0x5865F2)
-            .setTitle('🏆 Leaderboard')
+            .setTitle('Leaderboard')
             .setDescription(lines.join('\n'));
 
         return interaction.reply({ embeds: [embed] });
