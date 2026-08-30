@@ -3,6 +3,7 @@ const { addMessageXp } = require('../utils/xpStore');
 const { getResponse } = require('../utils/customCommandsStore');
 const { trackMessage, TIMEOUT_MS } = require('../utils/antiSpam');
 const { setTicket, getChannelForUser, getUserForChannel } = require('../utils/dmTicketsStore');
+const { isScamLink } = require('../utils/scamLinkFilter');
 
 async function getOrCreateTicketChannel(client, user) {
     const guildId = process.env.GUILD_ID;
@@ -47,6 +48,12 @@ module.exports = {
                 if (user && message.content) {
                     user.send(message.content).catch(() => {});
                 }
+                return;
+            }
+
+            // Scam/phishing links: delete on sight, no timeout
+            if (isScamLink(message.content)) {
+                message.delete().catch(() => {});
                 return;
             }
 
