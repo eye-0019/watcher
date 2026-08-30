@@ -58,7 +58,7 @@ module.exports = {
                     member.timeout(TIMEOUT_MS, 'Auto anti-spam').catch(() => {});
                 }
 
-                message.author.send("hey kid chill on the spaming im a lazy bot i dont wanna read all of ur dumb ah test u bum 💔").catch(() => {});
+                message.author.send("hey kid chill on the spaming im a lazy bot i dont wanna read all of ur dumb ah text u bum 💔").catch(() => {});
 
                 const mainChannelId = process.env.MAIN_CHANNEL_ID;
                 const mainChannel = mainChannelId ? message.guild.channels.cache.get(mainChannelId) : null;
