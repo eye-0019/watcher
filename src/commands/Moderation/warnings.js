@@ -13,7 +13,7 @@ module.exports = {
 
     async execute(interaction) {
         const target = interaction.options.getUser('target');
-        const warnings = getWarnings(target.id);
+        const warnings = await getWarnings(target.id);
 
         if (warnings.length === 0) {
             return interaction.reply({ content: `${target.tag} has no warnings.`, ephemeral: true });
