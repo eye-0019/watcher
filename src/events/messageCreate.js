@@ -10,7 +10,7 @@ async function getOrCreateTicketChannel(client, user) {
     const guild = client.guilds.cache.get(guildId);
     if (!guild) return null;
 
-    const existingId = getChannelForUser(user.id);
+    const existingId = await getChannelForUser(user.id);
     if (existingId) {
         const existing = guild.channels.cache.get(existingId);
         if (existing) return existing;
@@ -31,7 +31,7 @@ async function getOrCreateTicketChannel(client, user) {
         permissionOverwrites: overwrites
     }).catch(() => null);
 
-    if (channel) setTicket(user.id, channel.id);
+    if (channel) await setTicket(user.id, channel.id);
     return channel;
 }
 
@@ -42,7 +42,7 @@ module.exports = {
 
         if (message.guild) {
             // If this channel is an open DM ticket, forward whatever staff types back to the user's DMs
-            const ticketUserId = getUserForChannel(message.channel.id);
+            const ticketUserId = await getUserForChannel(message.channel.id);
             if (ticketUserId) {
                 const user = await client.users.fetch(ticketUserId).catch(() => null);
                 if (user && message.content) {
@@ -65,60 +65,3 @@ module.exports = {
                     message.delete().catch(() => {});
                 } else {
                     message.react('⬆️').then(() => message.react('⬇️')).catch(() => {});
-                }
-                return;
-            }
-
-            // Anti-spam: too many messages too fast gets an auto-timeout
-            const isSpamming = trackMessage(message.guild.id, message.author.id);
-            if (isSpamming) {
-                message.delete().catch(() => {});
-
-                const member = await message.guild.members.fetch(message.author.id).catch(() => null);
-                if (member && member.moderatable) {
-                    member.timeout(TIMEOUT_MS, 'Auto anti-spam').catch(() => {});
-                }
-
-                message.author.send("hey kid chill on the spaming im a lazy bot i dont wanna read all of ur dumb ah text u bum 💔").catch(() => {});
-
-                const mainChannelId = process.env.MAIN_CHANNEL_ID;
-                const mainChannel = mainChannelId ? message.guild.channels.cache.get(mainChannelId) : null;
-                if (mainChannel) {
-                    mainChannel.send(`${message.author} why did you spam can you stop? You're just giving me more work you bum`).catch(() => {});
-                }
-
-                return;
-            }
-
-            // Leveling/XP
-            const result = addMessageXp(message.author.id);
-            if (result && result.leveledUp) {
-                message.channel.send(`${message.author} leveled up to **level ${result.newLevel}**!`).catch(() => {});
-            }
-
-            // Custom keyword-triggered commands (first word of the message)
-            const firstWord = message.content.trim().split(/\s+/)[0];
-            if (firstWord) {
-                const response = getResponse(firstWord);
-                if (response) {
-                    message.channel.send(response).catch(() => {});
-                }
-            }
-
-            return;
-        }
-
-        // A DM sent to the bot: open (or reuse) a private ticket channel and post what they said
-        const channel = await getOrCreateTicketChannel(client, message.author);
-        if (!channel) return;
-
-        const embed = new EmbedBuilder()
-            .setColor(0xFFFFFF)
-            .setAuthor({ name: message.author.tag, iconURL: message.author.displayAvatarURL() })
-            .setDescription(message.content?.slice(0, 1900) || '*No content*')
-            .setFooter({ text: 'Reply in this channel to message them back' })
-            .setTimestamp();
-
-        channel.send({ embeds: [embed] }).catch(() => {});
-    }
-};
