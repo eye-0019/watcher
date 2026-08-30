@@ -24,7 +24,7 @@ module.exports = {
             return interaction.reply({ content: 'Could not find that member.', ephemeral: true });
         }
 
-        const count = addWarning(target.id, {
+        const count = await addWarning(target.id, {
             reason,
             moderator: interaction.user.tag,
             date: new Date().toISOString()
