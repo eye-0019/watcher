@@ -1,28 +1,19 @@
-const fs = require('fs');
-const path = require('path');
+const { pool } = require('./db');
 
-const filePath = path.join(__dirname, '..', '..', 'reactionRoles.json');
-
-function loadData() {
-    if (!fs.existsSync(filePath)) return {};
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+async function addReactionRole(messageId, emoji, roleId) {
+    await pool.query(
+        `INSERT INTO reaction_roles (message_id, emoji, role_id) VALUES ($1, $2, $3)
+         ON CONFLICT (message_id, emoji) DO UPDATE SET role_id = $3`,
+        [messageId, emoji, roleId]
+    );
 }
 
-function saveData(data) {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-}
-
-// Maps a messageId -> { emoji: roleId }
-function addReactionRole(messageId, emoji, roleId) {
-    const data = loadData();
-    if (!data[messageId]) data[messageId] = {};
-    data[messageId][emoji] = roleId;
-    saveData(data);
-}
-
-function getRoleId(messageId, emoji) {
-    const data = loadData();
-    return data[messageId]?.[emoji] || null;
+async function getRoleId(messageId, emoji) {
+    const { rows } = await pool.query(
+        'SELECT role_id FROM reaction_roles WHERE message_id = $1 AND emoji = $2',
+        [messageId, emoji]
+    );
+    return rows.length ? rows[0].role_id : null;
 }
 
 module.exports = { addReactionRole, getRoleId };
