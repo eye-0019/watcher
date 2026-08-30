@@ -25,7 +25,7 @@ module.exports = {
             return interaction.reply({ content: `Could not DM ${target.tag}. They may have DMs closed.`, ephemeral: true });
         }
 
-        let channelId = getChannelForUser(target.id);
+        let channelId = await getChannelForUser(target.id);
         let channel = channelId ? interaction.guild.channels.cache.get(channelId) : null;
 
         if (!channel) {
@@ -44,7 +44,7 @@ module.exports = {
                 permissionOverwrites: overwrites
             }).catch(() => null);
 
-            if (channel) setTicket(target.id, channel.id);
+            if (channel) await setTicket(target.id, channel.id);
         }
 
         return interaction.reply(`DM sent to ${target.tag}.${channel ? ` Their replies will show up in ${channel}.` : ''}`);
