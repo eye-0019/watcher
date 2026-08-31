@@ -2,7 +2,7 @@
 // Resets automatically since old timestamps age out of the window.
 
 const MSG_LIMIT = 10;
-const WINDOW_MS = 6 * 1000; // 7 seconds
+const WINDOW_MS = 6 * 1000; // 6 seconds
 const TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout when triggered
 const COOLDOWN_MS = 30 * 1000; // once triggered, don't fire again on this person for 30 sec
 
