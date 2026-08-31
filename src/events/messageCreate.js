@@ -8,204 +8,119 @@ const { isScamLink } = require('../utils/scamLinkFilter');
 async function getOrCreateTicketChannel(client, user) {
     const guildId = process.env.GUILD_ID;
     const guild = client.guilds.cache.get(guildId);
-
     if (!guild) return null;
 
     const existingId = await getChannelForUser(user.id);
-
     if (existingId) {
         const existing = guild.channels.cache.get(existingId);
         if (existing) return existing;
     }
 
     const overwrites = [
-        {
-            id: guild.roles.everyone.id,
-            deny: [PermissionFlagsBits.ViewChannel]
-        }
+        { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }
     ];
-
     const staffRoleId = process.env.STAFF_ROLE_ID;
-
     if (staffRoleId) {
-        overwrites.push({
-            id: staffRoleId,
-            allow: [
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.SendMessages
-            ]
-        });
+        overwrites.push({ id: staffRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] });
     }
 
     const channel = await guild.channels.create({
-        name:
-            `dm-${user.username}`
-                .toLowerCase()
-                .replace(/[^a-z0-9-]/g, '')
-                .slice(0, 90) || `dm-${user.id}`,
+        name: `dm-${user.username}`.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 90) || `dm-${user.id}`,
         type: ChannelType.GuildText,
         parent: process.env.MODMAIL_CATEGORY_ID || undefined,
         permissionOverwrites: overwrites
     }).catch(() => null);
 
-    if (channel) {
-        await setTicket(user.id, channel.id);
-    }
-
+    if (channel) await setTicket(user.id, channel.id);
     return channel;
 }
 
 module.exports = {
     name: 'messageCreate',
-
     async execute(message, client) {
         if (message.author.bot) return;
 
         if (message.guild) {
-
-            // If this channel is an open DM ticket,
-            // forward whatever staff types back to the user's DMs.
+            // If this channel is an open DM ticket, forward whatever staff types back to the user's DMs
             const ticketUserId = await getUserForChannel(message.channel.id);
-
             if (ticketUserId) {
-                const user = await client.users
-                    .fetch(ticketUserId)
-                    .catch(() => null);
-
+                const user = await client.users.fetch(ticketUserId).catch(() => null);
                 if (user && message.content) {
                     user.send(message.content).catch(() => {});
                 }
-
                 return;
             }
 
-            // Scam/phishing links: delete on sight, no timeout.
+            // Scam/phishing links: delete on sight, no timeout
             if (isScamLink(message.content)) {
                 message.delete().catch(() => {});
                 return;
             }
 
-            // Pics-only channel:
-            // delete anything without an image,
-            // react to add up/down voting on images.
+            // Pics-only channel: delete anything without an image, react to add up/down voting on images
             const picsChannelId = process.env.PICS_CHANNEL_ID;
-
             if (picsChannelId && message.channel.id === picsChannelId) {
-                const hasImage = message.attachments.some(
-                    a => a.contentType?.startsWith('image/')
-                );
-
+                const hasImage = message.attachments.some(a => a.contentType?.startsWith('image/'));
                 if (!hasImage) {
                     message.delete().catch(() => {});
                 } else {
-                    message
-                        .react('⬆️')
-                        .then(() => message.react('⬇️'))
-                        .catch(() => {});
+                    message.react('⬆️').then(() => message.react('⬇️')).catch(() => {});
                 }
-
                 return;
             }
 
-            // Anti-spam:
-            // too many messages too fast gets an auto-timeout.
-            const isSpamming = trackMessage(
-                message.guild.id,
-                message.author.id
-            );
-
+            // Anti-spam: too many messages too fast gets an auto-timeout
+            const exemptIds = (process.env.EXEMPT_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
+            const isExempt = exemptIds.includes(message.author.id);
+            const isSpamming = !isExempt && trackMessage(message.guild.id, message.author.id);
             if (isSpamming) {
                 message.delete().catch(() => {});
 
-                const member = await message.guild.members
-                    .fetch(message.author.id)
-                    .catch(() => null);
-
+                const member = await message.guild.members.fetch(message.author.id).catch(() => null);
                 if (member && member.moderatable) {
-                    member
-                        .timeout(TIMEOUT_MS, 'Auto anti-spam')
-                        .catch(() => {});
+                    member.timeout(TIMEOUT_MS, 'Auto anti-spam').catch(() => {});
                 }
 
-                message.author
-                    .send(
-                        "hey kid chill on the spaming im a lazy bot i dont wanna read all of ur dumb ah text u bum 💔"
-                    )
-                    .catch(() => {});
+                message.author.send("hey kid chill on the spaming im a lazy bot i dont wanna read all of ur dumb ah text u bum").catch(() => {});
 
                 const mainChannelId = process.env.MAIN_CHANNEL_ID;
-
-                const mainChannel = mainChannelId
-                    ? message.guild.channels.cache.get(mainChannelId)
-                    : null;
-
+                const mainChannel = mainChannelId ? message.guild.channels.cache.get(mainChannelId) : null;
                 if (mainChannel) {
-                    mainChannel
-                        .send(
-                            `${message.author} why did you spam can you stop? You're just giving me more work you bum`
-                        )
-                        .catch(() => {});
+                    mainChannel.send(`${message.author} why did you spam can you stop? You're just giving me more work you bum`).catch(() => {});
                 }
 
                 return;
             }
 
-            // Leveling / XP
-            const result = addMessageXp(message.author.id);
-
+            // Leveling/XP
+            const result = await addMessageXp(message.author.id);
             if (result && result.leveledUp) {
-                message.channel
-                    .send(
-                        `${message.author} leveled up to **level ${result.newLevel}**!`
-                    )
-                    .catch(() => {});
+                message.channel.send(`${message.author} leveled up to **level ${result.newLevel}**!`).catch(() => {});
             }
 
-            // Custom keyword-triggered commands
-            // Uses the first word of the message.
-            const firstWord = message.content
-                .trim()
-                .split(/\s+/)[0];
-
+            // Custom keyword-triggered commands (first word of the message)
+            const firstWord = message.content.trim().split(/\s+/)[0];
             if (firstWord) {
-                const response = getResponse(firstWord);
-
+                const response = await getResponse(firstWord);
                 if (response) {
-                    message.channel
-                        .send(response)
-                        .catch(() => {});
+                    message.channel.send(response).catch(() => {});
                 }
             }
 
             return;
         }
 
-        // A DM sent to the bot:
-        // open (or reuse) a private ticket channel
-        // and post what they said.
-        const channel = await getOrCreateTicketChannel(
-            client,
-            message.author
-        );
-
+        // A DM sent to the bot: open (or reuse) a private ticket channel and post what they said
+        const channel = await getOrCreateTicketChannel(client, message.author);
         if (!channel) return;
 
         const embed = new EmbedBuilder()
             .setColor(0xFFFFFF)
-            .setAuthor({
-                name: message.author.tag,
-                iconURL: message.author.displayAvatarURL()
-            })
-            .setDescription(
-                message.content?.slice(0, 1900) || '*No content*'
-            )
-            .setFooter({
-                text: 'Reply in this channel to message them back'
-            })
+            .setAuthor({ name: message.author.tag, iconURL: message.author.displayAvatarURL() })
+            .setDescription(message.content?.slice(0, 1900) || '*No content*')
+            .setFooter({ text: 'Reply in this channel to message them back' })
             .setTimestamp();
 
-        channel
-            .send({ embeds: [embed] })
-            .catch(() => {});
+        channel.send({ embeds: [embed] }).catch(() => {});
     }
 };
