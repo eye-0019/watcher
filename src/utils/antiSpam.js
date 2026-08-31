@@ -1,8 +1,8 @@
 // In-memory spam tracker: message timestamps per user, per guild.
 // Resets automatically since old timestamps age out of the window.
 
-const MSG_LIMIT = 7;
-const WINDOW_MS = 7 * 1000; // 7 seconds
+const MSG_LIMIT = 10;
+const WINDOW_MS = 6 * 1000; // 7 seconds
 const TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout when triggered
 const COOLDOWN_MS = 30 * 1000; // once triggered, don't fire again on this person for 30 sec
 
