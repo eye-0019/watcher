@@ -27,11 +27,13 @@ module.exports = {
         if (!target) {
             return interaction.reply({ content: 'Could not find that member.', ephemeral: true });
         }
+
         if (!target.moderatable) {
             return interaction.reply({ content: 'I cannot timeout that member.', ephemeral: true });
         }
 
         await target.timeout(minutes * 60 * 1000, reason);
+
         await logAction(interaction.guild, {
             action: 'Member Timed Out',
             moderator: interaction.user,
@@ -40,12 +42,8 @@ module.exports = {
             color: 0x95A5A6
         });
 
-        const mainChannelId = process.env.MAIN_CHANNEL_ID;
-        const mainChannel = mainChannelId ? interaction.guild.channels.cache.get(mainChannelId) : null;
-        if (mainChannel) {
-            mainChannel.send(`${target.user} why did you spam can you stop? You're just giving me more work you bum`).catch(() => {});
-        }
-
-        return interaction.reply(`Timed out ${target.user.tag} for ${minutes} minute(s). Reason: ${reason}`);
+        return interaction.reply(
+            `Timed out ${target.user.tag} for ${minutes} minute(s). Reason: ${reason}`
+        );
     }
 };
