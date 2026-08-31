@@ -4,6 +4,7 @@ const { getResponse } = require('../utils/customCommandsStore');
 const { trackMessage, TIMEOUT_MS } = require('../utils/antiSpam');
 const { setTicket, getChannelForUser, getUserForChannel } = require('../utils/dmTicketsStore');
 const { isScamLink } = require('../utils/scamLinkFilter');
+const { getAiReply } = require('../utils/aiChat');
 
 async function getOrCreateTicketChannel(client, user) {
     const guildId = process.env.GUILD_ID;
@@ -48,6 +49,15 @@ module.exports = {
                 if (user && message.content) {
                     user.send(message.content).catch(() => {});
                 }
+                return;
+            }
+
+            // AI chat channel: reply naturally when pinged in the designated channel
+            const aiChannelId = process.env.AI_CHANNEL_ID;
+            if (aiChannelId && message.channel.id === aiChannelId && message.mentions.has(client.user)) {
+                const cleanContent = message.content.replace(/<@!?\d+>/g, '').trim();
+                const reply = await getAiReply(cleanContent);
+                if (reply) message.channel.send(reply).catch(() => {});
                 return;
             }
 
