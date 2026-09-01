@@ -6,6 +6,25 @@ const { setTicket, getChannelForUser, getUserForChannel } = require('../utils/dm
 const { isScamLink } = require('../utils/scamLinkFilter');
 const { getAiReply } = require('../utils/aiChat');
 
+const ANTI_SPAM_MESSAGES = [
+    'bro chill 😭',
+    'Slow down, you are sending messages way too fast.',
+    'okay we get it 💀',
+    'Please stop spamming.',
+    'my guy relax 😤',
+    'Take it easy for a second.',
+    'bro is fighting the send button 🤦',
+    'You are sending messages too quickly.',
+    'why are you sending all that 😭',
+    'Give the server a second.'
+];
+
+function getRandomAntiSpamMessage() {
+    return ANTI_SPAM_MESSAGES[
+        Math.floor(Math.random() * ANTI_SPAM_MESSAGES.length)
+    ];
+}
+
 const LEVEL_UP_MESSAGES = [
     '{user} just reached **level {level}**! 😼',
     'Nice, {user}! You are now **level {level}**.',
@@ -87,7 +106,6 @@ module.exports = {
         if (message.author.bot) return;
 
         if (message.guild) {
-            // If this channel is an open DM ticket, forward whatever staff types back to the user's DMs
             const ticketUserId = await getUserForChannel(message.channel.id);
 
             if (ticketUserId) {
@@ -102,7 +120,6 @@ module.exports = {
                 return;
             }
 
-            // AI chat channel: reply naturally when pinged in the designated channel
             const aiChannelId = process.env.AI_CHANNEL_ID;
 
             if (
@@ -123,13 +140,11 @@ module.exports = {
                 return;
             }
 
-            // Scam/phishing links: delete on sight, no timeout
             if (isScamLink(message.content)) {
                 message.delete().catch(() => {});
                 return;
             }
 
-            // Pics-only channel: delete anything without an image, react to images
             const picsChannelId = process.env.PICS_CHANNEL_ID;
 
             if (
@@ -144,15 +159,14 @@ module.exports = {
                     message.delete().catch(() => {});
                 } else {
                     message
-                        .react('☝️')
-                        .then(() => message.react('👌'))
+                        .react('⬆️')
+                        .then(() => message.react('⬇️'))
                         .catch(() => {});
                 }
 
                 return;
             }
 
-            // Anti-spam: too many messages too fast gets an auto-timeout
             const exemptIds = (process.env.EXEMPT_USER_IDS || '')
                 .split(',')
                 .map(s => s.trim())
@@ -183,10 +197,11 @@ module.exports = {
                         .catch(() => {});
                 }
 
+                const randomMessage =
+                    getRandomAntiSpamMessage();
+
                 message.author
-                    .send(
-                        "hey kid chill on the spaming im a lazy bot i dont wanna read all of ur dumb ah text u bum"
-                    )
+                    .send(randomMessage)
                     .catch(() => {});
 
                 const mainChannelId =
@@ -201,7 +216,7 @@ module.exports = {
                 if (mainChannel) {
                     mainChannel
                         .send(
-                            `${message.author} why did you spam can you stop? You're just giving me more work you bum`
+                            `${message.author} ${randomMessage}`
                         )
                         .catch(() => {});
                 }
@@ -209,7 +224,6 @@ module.exports = {
                 return;
             }
 
-            // Leveling/XP
             const result = await addMessageXp(
                 message.author.id
             );
@@ -226,7 +240,6 @@ module.exports = {
                     .catch(() => {});
             }
 
-            // Custom keyword-triggered commands
             const firstWord = message.content
                 .trim()
                 .split(/\s+/)[0];
@@ -245,7 +258,6 @@ module.exports = {
             return;
         }
 
-        // A DM sent to the bot: open or reuse a private ticket channel
         const channel =
             await getOrCreateTicketChannel(
                 client,
