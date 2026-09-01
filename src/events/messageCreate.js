@@ -174,12 +174,20 @@ module.exports = {
         const watcherMentioned =
             message.mentions.has(client.user);
 
+        // DEBUG
+        console.log('🧪 AI DEBUG:', {
+            aiChannelId,
+            currentChannelId: message.channel.id,
+            watcherMentioned,
+            content: message.content
+        });
+
         if (
             aiChannelId &&
             message.channel.id === aiChannelId &&
             watcherMentioned
         ) {
-            // Remove the @Watcher mention from the message
+            // Remove the @Watcher mention
             const userMessage = message.content
                 .replace(
                     new RegExp(`<@!?${client.user.id}>`, 'g'),
@@ -199,8 +207,10 @@ module.exports = {
             try {
                 await message.channel.sendTyping();
 
-                // Pass BOTH the Discord message and cleaned text
-                // so the AI can identify who is talking.
+                console.log(
+                    `🤖 AI message from ${message.author.username} (${message.author.id})`
+                );
+
                 const reply =
                     await getAiReply(
                         message,
@@ -216,6 +226,7 @@ module.exports = {
                 }
 
                 await message.reply(reply);
+
             } catch (error) {
                 console.error(
                     '❌ AI message handling failed:',
