@@ -15,6 +15,7 @@ async function initDb() {
             created_at TIMESTAMPTZ DEFAULT now()
         );
     `);
+
     await pool.query(`
         CREATE TABLE IF NOT EXISTS xp (
             user_id TEXT PRIMARY KEY,
@@ -23,12 +24,14 @@ async function initDb() {
             last_message_at BIGINT NOT NULL DEFAULT 0
         );
     `);
+
     await pool.query(`
         CREATE TABLE IF NOT EXISTS custom_commands (
             keyword TEXT PRIMARY KEY,
             response TEXT NOT NULL
         );
     `);
+
     await pool.query(`
         CREATE TABLE IF NOT EXISTS reaction_roles (
             message_id TEXT NOT NULL,
@@ -37,12 +40,14 @@ async function initDb() {
             PRIMARY KEY (message_id, emoji)
         );
     `);
+
     await pool.query(`
         CREATE TABLE IF NOT EXISTS dm_tickets (
             user_id TEXT PRIMARY KEY,
             channel_id TEXT NOT NULL UNIQUE
         );
     `);
+
     await pool.query(`
         CREATE TABLE IF NOT EXISTS rating_counts (
             category TEXT NOT NULL,
@@ -53,19 +58,23 @@ async function initDb() {
             PRIMARY KEY (category, message_id)
         );
     `);
+
     await pool.query(`
         CREATE TABLE IF NOT EXISTS rating_holders (
             category TEXT PRIMARY KEY,
             user_id TEXT
         );
     `);
-        await pool.query(`
+
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS leaderboard_messages (
             kind TEXT PRIMARY KEY,
             channel_id TEXT NOT NULL,
             message_id TEXT NOT NULL
         );
     `);
+
+    // AI short-term conversation memory
     await pool.query(`
         CREATE TABLE IF NOT EXISTS ai_messages (
             id SERIAL PRIMARY KEY,
@@ -75,6 +84,8 @@ async function initDb() {
             created_at TIMESTAMPTZ DEFAULT now()
         );
     `);
+
+    // AI permanent relationship memory
     await pool.query(`
         CREATE TABLE IF NOT EXISTS ai_user_notes (
             user_id TEXT PRIMARY KEY,
@@ -85,7 +96,7 @@ async function initDb() {
     `);
 }
 
-module.exports = { pool, initDb };
-}
-
-module.exports = { pool, initDb };
+module.exports = {
+    pool,
+    initDb
+};
