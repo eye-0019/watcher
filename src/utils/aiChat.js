@@ -453,7 +453,7 @@ Always sound natural.
                         }
                     ],
 
-                    max_tokens: 300,
+                    max_tokens: 800,
                     temperature: 0.8
                 })
             }
