@@ -59,13 +59,33 @@ async function initDb() {
             user_id TEXT
         );
     `);
-    await pool.query(`
+        await pool.query(`
         CREATE TABLE IF NOT EXISTS leaderboard_messages (
             kind TEXT PRIMARY KEY,
             channel_id TEXT NOT NULL,
             message_id TEXT NOT NULL
         );
     `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS ai_messages (
+            id SERIAL PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT now()
+        );
+    `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS ai_user_notes (
+            user_id TEXT PRIMARY KEY,
+            notes TEXT,
+            exchange_count INTEGER NOT NULL DEFAULT 0,
+            updated_at TIMESTAMPTZ DEFAULT now()
+        );
+    `);
+}
+
+module.exports = { pool, initDb };
 }
 
 module.exports = { pool, initDb };
