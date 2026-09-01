@@ -1,63 +1,87 @@
 const { EmbedBuilder } = require('discord.js');
-const { cacheGuildInvites, getCachedInvites } = require('../utils/inviteCache');
-const { recordJoin, isRaidActive, isAccountTooNew } = require('../utils/raidGuard');
+const { pool } = require('../utils/db');
+const { trackJoin } = require('../utils/raidGuard');
 
-module.exports = {
-    name: 'guildMemberAdd',
-    async execute(member) {
-        const logChannelId = process.env.LOG_CHANNEL_ID;
-        const logChannel = logChannelId ? member.guild.channels.cache.get(logChannelId) : null;
+const WELCOME_MESSAGES = [
+  'Welcome {user} to the server! 👀',
+  'Hey {user}, welcome to the server!',
+  'Welcome {user}! Glad to have you here. ❤️',
+  '{user} just joined. Welcome!',
+  'Everyone say hi to {user}! 🗣️',
+  'Hey {user}! Hope you enjoy your time here.',
+  '{user} has arrived. Welcome! 😼',
+  'Welcome in, {user}!',
+  '{user} just pulled up. Welcome! 👌',
+  'Welcome {user}! Make yourself at home.'
+];
 
-        // Raid protection
-        const raidJustDetected = recordJoin(member.guild.id);
-        if (raidJustDetected && logChannel) {
-            logChannel.send('🚨 **Possible raid detected** — a burst of joins just came in. Auto-kicking brand new accounts for the next couple minutes.').catch(() => {});
-        }
+function getRandomWelcomeMessage(user) {
+  const message =
+    WELCOME_MESSAGES[
+      Math.floor(Math.random() * WELCOME_MESSAGES.length)
+    ];
 
-        if (isRaidActive(member.guild.id) && isAccountTooNew(member.user)) {
-            member.kick('Auto anti-raid: brand new account during a join burst').catch(() => {});
-            if (logChannel) {
-                logChannel.send(`🚨 Auto-kicked ${member.user.tag} (account too new) during an active raid window.`).catch(() => {});
-            }
-            return;
-        }
+  return message.replace('{user}', user);
+}
 
-        const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
-        const welcomeChannel = welcomeChannelId ? member.guild.channels.cache.get(welcomeChannelId) : null;
-        if (welcomeChannel) {
-            welcomeChannel.send(`Welcome ${member} to the server! 🎉`).catch(() => {});
-        }
+module.exports = async function guildMemberAdd(member) {
+  try {
+    const raidState = trackJoin(member.guild.id, member.id);
 
-        const memberRoleId = process.env.MEMBER_ROLE_ID;
-        if (memberRoleId) {
-            member.roles.add(memberRoleId).catch(() => {});
-        }
+    if (raidState.isRaid) {
+      console.log(
+        `[RaidGuard] Raid detected in ${member.guild.name}: ${raidState.joinCount} joins in ${raidState.windowSeconds}s`
+      );
+    }
 
-        if (!logChannel) return;
+    const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
 
-        const oldInvites = getCachedInvites(member.guild.id);
-        let usedInvite = null;
+    if (welcomeChannelId) {
+      const channel = member.guild.channels.cache.get(welcomeChannelId);
 
-        try {
-            const newInvites = await member.guild.invites.fetch();
-            usedInvite = newInvites.find(invite => {
-                const oldUses = oldInvites.get(invite.code) || 0;
-                return invite.uses > oldUses;
-            });
-        } catch {}
-
-        await cacheGuildInvites(member.guild);
+      if (channel && channel.isTextBased()) {
+        const welcomeMessage = getRandomWelcomeMessage(member.toString());
 
         const embed = new EmbedBuilder()
-            .setAuthor({ name: 'Member Joined', iconURL: member.user.displayAvatarURL() })
-            .setDescription(`${member.user} joined the server`)
-            .addFields({
-                name: 'Invite Used',
-                value: usedInvite ? `${usedInvite.code} (by ${usedInvite.inviter?.tag || 'Unknown'})` : 'Unknown'
-            })
-            .setFooter({ text: `User ID: ${member.id}` })
-            .setTimestamp();
+          .setColor(0x5865f2)
+          .setDescription(welcomeMessage)
+          .setTimestamp();
 
-        logChannel.send({ embeds: [embed] }).catch(() => {});
+        await channel.send({
+          embeds: [embed]
+        });
+      }
     }
+
+    const autoRoleId = process.env.AUTO_ROLE_ID;
+
+    if (autoRoleId) {
+      const role = member.guild.roles.cache.get(autoRoleId);
+
+      if (role) {
+        try {
+          await member.roles.add(role);
+        } catch (error) {
+          console.error(
+            `[Welcome] Failed to add auto role to ${member.user.tag}:`,
+            error
+          );
+        }
+      }
+    }
+
+    await pool.query(
+      `
+      INSERT INTO member_joins (user_id, guild_id, joined_at)
+      VALUES ($1, $2, NOW())
+      ON CONFLICT DO NOTHING
+      `,
+      [member.id, member.guild.id]
+    );
+  } catch (error) {
+    console.error(
+      `[Welcome] Error handling ${member.user.tag} joining ${member.guild.name}:`,
+      error
+    );
+  }
 };
