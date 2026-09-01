@@ -355,7 +355,7 @@ Output ONLY the updated note.
                         }
                     ],
 
-                    max_tokens: 100,
+                    max_tokens: 500,
                     temperature: 0.4,
 
                     reasoning: {
