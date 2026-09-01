@@ -33,16 +33,22 @@ function getRandomLevelUpMessage(user, level) {
 async function getOrCreateTicketChannel(client, user) {
     const guildId = process.env.GUILD_ID;
     const guild = client.guilds.cache.get(guildId);
+
     if (!guild) return null;
 
     const existingId = await getChannelForUser(user.id);
+
     if (existingId) {
         const existing = guild.channels.cache.get(existingId);
+
         if (existing) return existing;
     }
 
     const overwrites = [
-        { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] }
+        {
+            id: guild.roles.everyone.id,
+            deny: [PermissionFlagsBits.ViewChannel]
+        }
     ];
 
     const staffRoleId = process.env.STAFF_ROLE_ID;
@@ -123,7 +129,7 @@ module.exports = {
                 return;
             }
 
-            // Pics-only channel: delete anything without an image, react to add up/down voting on images
+            // Pics-only channel: delete anything without an image, react to images
             const picsChannelId = process.env.PICS_CHANNEL_ID;
 
             if (
@@ -138,8 +144,8 @@ module.exports = {
                     message.delete().catch(() => {});
                 } else {
                     message
-                        .react('⬆️')
-                        .then(() => message.react('⬇️'))
+                        .react('☝️')
+                        .then(() => message.react('👌'))
                         .catch(() => {});
                 }
 
@@ -220,7 +226,7 @@ module.exports = {
                     .catch(() => {});
             }
 
-            // Custom keyword-triggered commands (first word of the message)
+            // Custom keyword-triggered commands
             const firstWord = message.content
                 .trim()
                 .split(/\s+/)[0];
@@ -239,7 +245,7 @@ module.exports = {
             return;
         }
 
-        // A DM sent to the bot: open (or reuse) a private ticket channel and post what they said
+        // A DM sent to the bot: open or reuse a private ticket channel
         const channel =
             await getOrCreateTicketChannel(
                 client,
