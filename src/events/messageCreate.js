@@ -7,31 +7,61 @@ const {
 const { addMessageXp } = require('../utils/xpStore');
 const { getResponse } = require('../utils/customCommandsStore');
 const { trackMessage, TIMEOUT_MS } = require('../utils/antiSpam');
+
 const {
     setTicket,
     getChannelForUser,
     getUserForChannel
 } = require('../utils/dmTicketsStore');
-const { isScamLink } = require('../utils/scamLinkFilter');
-const { getAiReply } = require('../utils/aiChat');
+
+const { isScamLink } =
+    require('../utils/scamLinkFilter');
+
+const { getAiReply } =
+    require('../utils/aiChat');
+
+// ============================================================
+// Anti-spam exemptions
+// ============================================================
+//
+// You can add more Discord user IDs here.
+//
+// The server owner is automatically exempt.
+// You can also set:
+// EXEMPT_USER_IDS=123,456,789
+// in your environment variables.
+//
+
+const EXEMPT_USER_IDS = new Set([
+    '1443431290492948611',
+
+    ...(process.env.EXEMPT_USER_IDS || '')
+        .split(',')
+        .map(id => id.trim())
+        .filter(Boolean)
+]);
 
 // ============================================================
 // Create DM ticket channel
 // ============================================================
 
 async function getOrCreateTicketChannel(client, user) {
-    const guildId = process.env.GUILD_ID;
+    const guildId =
+        process.env.GUILD_ID;
 
-    const guild = client.guilds.cache.get(guildId);
+    const guild =
+        client.guilds.cache.get(guildId);
 
     if (!guild) {
         return null;
     }
 
-    const existingId = await getChannelForUser(user.id);
+    const existingId =
+        await getChannelForUser(user.id);
 
     if (existingId) {
-        const existing = guild.channels.cache.get(existingId);
+        const existing =
+            guild.channels.cache.get(existingId);
 
         if (existing) {
             return existing;
@@ -41,15 +71,19 @@ async function getOrCreateTicketChannel(client, user) {
     const overwrites = [
         {
             id: guild.roles.everyone.id,
-            deny: [PermissionFlagsBits.ViewChannel]
+            deny: [
+                PermissionFlagsBits.ViewChannel
+            ]
         }
     ];
 
-    const staffRoleId = process.env.STAFF_ROLE_ID;
+    const staffRoleId =
+        process.env.STAFF_ROLE_ID;
 
     if (staffRoleId) {
         overwrites.push({
             id: staffRoleId,
+
             allow: [
                 PermissionFlagsBits.ViewChannel,
                 PermissionFlagsBits.SendMessages
@@ -57,30 +91,37 @@ async function getOrCreateTicketChannel(client, user) {
         });
     }
 
-    const channel = await guild.channels.create({
-        name:
-            `dm-${user.username}`
-                .toLowerCase()
-                .replace(/[^a-z0-9-]/g, '')
-                .slice(0, 90) || `dm-${user.id}`,
+    const channel =
+        await guild.channels.create({
+            name:
+                `dm-${user.username}`
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]/g, '')
+                    .slice(0, 90) ||
+                `dm-${user.id}`,
 
-        type: ChannelType.GuildText,
+            type: ChannelType.GuildText,
 
-        parent:
-            process.env.MODMAIL_CATEGORY_ID || undefined,
+            parent:
+                process.env.MODMAIL_CATEGORY_ID ||
+                undefined,
 
-        permissionOverwrites: overwrites
-    }).catch(error => {
-        console.error(
-            '❌ Failed to create DM ticket channel:',
-            error
-        );
+            permissionOverwrites:
+                overwrites
+        }).catch(error => {
+            console.error(
+                '❌ Failed to create DM ticket channel:',
+                error
+            );
 
-        return null;
-    });
+            return null;
+        });
 
     if (channel) {
-        await setTicket(user.id, channel.id);
+        await setTicket(
+            user.id,
+            channel.id
+        );
     }
 
     return channel;
@@ -94,7 +135,11 @@ module.exports = {
     name: 'messageCreate',
 
     async execute(message, client) {
+
+        // ========================================================
         // Ignore bots
+        // ========================================================
+
         if (message.author.bot) {
             return;
         }
@@ -104,6 +149,7 @@ module.exports = {
         // ========================================================
 
         if (!message.guild) {
+
             const channel =
                 await getOrCreateTicketChannel(
                     client,
@@ -114,22 +160,28 @@ module.exports = {
                 return;
             }
 
-            const embed = new EmbedBuilder()
-                .setColor(0xFFFFFF)
-                .setAuthor({
-                    name: message.author.tag,
-                    iconURL:
-                        message.author.displayAvatarURL()
-                })
-                .setDescription(
-                    message.content?.slice(0, 1900) ||
-                    '*No content*'
-                )
-                .setFooter({
-                    text:
-                        'Reply in this channel to message them back'
-                })
-                .setTimestamp();
+            const embed =
+                new EmbedBuilder()
+                    .setColor(0xFFFFFF)
+
+                    .setAuthor({
+                        name: message.author.tag,
+                        iconURL:
+                            message.author
+                                .displayAvatarURL()
+                    })
+
+                    .setDescription(
+                        message.content?.slice(0, 1900) ||
+                        '*No content*'
+                    )
+
+                    .setFooter({
+                        text:
+                            'Reply in this channel to message them back'
+                    })
+
+                    .setTimestamp();
 
             await channel
                 .send({ embeds: [embed] })
@@ -148,15 +200,21 @@ module.exports = {
         // ========================================================
 
         const ticketUserId =
-            await getUserForChannel(message.channel.id);
+            await getUserForChannel(
+                message.channel.id
+            );
 
         if (ticketUserId) {
-            const user = await client.users
-                .fetch(ticketUserId)
-                .catch(() => null);
+
+            const user =
+                await client.users
+                    .fetch(ticketUserId)
+                    .catch(() => null);
 
             if (user && message.content) {
-                user.send(message.content).catch(() => {});
+                user
+                    .send(message.content)
+                    .catch(() => {});
             }
 
             return;
@@ -164,7 +222,7 @@ module.exports = {
 
         // ========================================================
         // AI CHAT
-        // Only works in the configured AI channel
+        // Only works in configured AI channel
         // AND when Watcher is mentioned
         // ========================================================
 
@@ -174,38 +232,36 @@ module.exports = {
         const watcherMentioned =
             message.mentions.has(client.user);
 
-        // DEBUG
-        console.log('🧪 AI DEBUG:', {
-            aiChannelId,
-            currentChannelId: message.channel.id,
-            watcherMentioned,
-            content: message.content
-        });
-
         if (
             aiChannelId &&
             message.channel.id === aiChannelId &&
             watcherMentioned
         ) {
-            // Remove the @Watcher mention
-            const userMessage = message.content
-                .replace(
-                    new RegExp(`<@!?${client.user.id}>`, 'g'),
-                    ''
-                )
-                .trim();
 
-            // Don't send an empty request
+            const userMessage =
+                message.content
+                    .replace(
+                        new RegExp(
+                            `<@!?${client.user.id}>`,
+                            'g'
+                        ),
+                        ''
+                    )
+                    .trim();
+
             if (!userMessage) {
-                await message.reply(
-                    'yo 😭 say something'
-                ).catch(() => {});
+
+                await message
+                    .reply('yo 😭 say something')
+                    .catch(() => {});
 
                 return;
             }
 
             try {
-                await message.channel.sendTyping();
+
+                await message.channel
+                    .sendTyping();
 
                 console.log(
                     `🤖 AI message from ${message.author.username} (${message.author.id})`
@@ -218,9 +274,12 @@ module.exports = {
                     );
 
                 if (!reply) {
-                    await message.reply(
-                        'uhh my brain is not working rn 😭 check the bot logs'
-                    ).catch(() => {});
+
+                    await message
+                        .reply(
+                            'uhh my brain is not working rn 😭 check the bot logs'
+                        )
+                        .catch(() => {});
 
                     return;
                 }
@@ -228,14 +287,17 @@ module.exports = {
                 await message.reply(reply);
 
             } catch (error) {
+
                 console.error(
                     '❌ AI message handling failed:',
                     error
                 );
 
-                await message.reply(
-                    'something broke on my end 😭'
-                ).catch(() => {});
+                await message
+                    .reply(
+                        'something broke on my end 😭'
+                    )
+                    .catch(() => {});
             }
 
             return;
@@ -245,8 +307,16 @@ module.exports = {
         // Scam/phishing links
         // ========================================================
 
-        if (isScamLink(message.content)) {
-            message.delete().catch(() => {});
+        if (
+            isScamLink(
+                message.content
+            )
+        ) {
+
+            await message
+                .delete()
+                .catch(() => {});
+
             return;
         }
 
@@ -261,17 +331,22 @@ module.exports = {
             picsChannelId &&
             message.channel.id === picsChannelId
         ) {
+
             const hasImage =
                 message.attachments.some(
                     attachment =>
-                        attachment.contentType?.startsWith(
-                            'image/'
-                        )
+                        attachment.contentType
+                            ?.startsWith('image/')
                 );
 
             if (!hasImage) {
-                message.delete().catch(() => {});
+
+                await message
+                    .delete()
+                    .catch(() => {});
+
             } else {
+
                 message
                     .react('⬆️')
                     .then(() =>
@@ -287,34 +362,70 @@ module.exports = {
         // Anti-spam
         // ========================================================
 
-        const spamResult = trackMessage(
-            message.guild.id,
-            message.author.id
-        );
+        const isExempt =
+            EXEMPT_USER_IDS.has(
+                message.author.id
+            );
 
-        if (spamResult) {
-            message.delete().catch(() => {});
+        if (!isExempt) {
 
-            const member =
-                await message.guild.members
-                    .fetch(message.author.id)
-                    .catch(() => null);
+            const spamResult =
+                trackMessage(
+                    message.guild.id,
+                    message.author.id
+                );
 
-            if (member?.moderatable) {
-                member
-                    .timeout(
-                        TIMEOUT_MS,
-                        'Auto anti-spam'
+            if (spamResult) {
+
+                await message
+                    .delete()
+                    .catch(() => {});
+
+                const member =
+                    await message.guild.members
+                        .fetch(message.author.id)
+                        .catch(() => null);
+
+                if (member?.moderatable) {
+
+                    await member
+                        .timeout(
+                            TIMEOUT_MS,
+                            'Auto anti-spam'
+                        )
+                        .catch(error => {
+                            console.error(
+                                '❌ Failed to timeout spammer:',
+                                error
+                            );
+                        });
+                }
+
+                // Public callout
+                await message.channel
+                    .send(
+                        `${message.author} bro chill 😭 you're sending messages way too fast.`
                     )
-                    .catch(error => {
-                        console.error(
-                            '❌ Failed to timeout spammer:',
-                            error
-                        );
-                    });
-            }
+                    .then(sentMessage => {
 
-            return;
+                        setTimeout(() => {
+                            sentMessage
+                                .delete()
+                                .catch(() => {});
+                        }, 5000);
+
+                    })
+                    .catch(() => {});
+
+                // Private DM
+                await message.author
+                    .send(
+                        'yo 😭 you were sending messages too fast, so Watcher hit you with a short timeout. chill for a sec.'
+                    )
+                    .catch(() => {});
+
+                return;
+            }
         }
 
         // ========================================================
@@ -322,8 +433,25 @@ module.exports = {
         // ========================================================
 
         try {
-            await addMessageXp(message.author.id);
+
+            const xpResult =
+                await addMessageXp(
+                    message.author.id
+                );
+
+            if (
+                xpResult?.leveledUp
+            ) {
+
+                await message.channel
+                    .send(
+                        `🎉 ${message.author} leveled up to **Level ${xpResult.newLevel}**!`
+                    )
+                    .catch(() => {});
+            }
+
         } catch (error) {
+
             console.error(
                 '❌ Failed to add message XP:',
                 error
@@ -335,6 +463,7 @@ module.exports = {
         // ========================================================
 
         try {
+
             const response =
                 await getResponse(
                     message.content
@@ -343,9 +472,13 @@ module.exports = {
                 );
 
             if (response) {
-                await message.channel.send(response);
+
+                await message.channel
+                    .send(response);
             }
+
         } catch (error) {
+
             console.error(
                 '❌ Failed to process custom command:',
                 error
