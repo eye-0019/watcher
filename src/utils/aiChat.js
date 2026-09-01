@@ -177,7 +177,7 @@ Respond naturally to the user's message.
                     ],
 
                     // Keep the actual response short.
-                    max_tokens: 250,
+                    max_tokens: 500,
 
                     // Slightly creative, but still controlled.
                     temperature: 0.8,
