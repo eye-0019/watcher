@@ -1,45 +1,63 @@
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
+const { pool } = require('../utils/db');
 
-module.exports = {
-    name: 'guildMemberRemove',
-    async execute(member) {
-        const logChannelId = process.env.LOG_CHANNEL_ID;
-        const channel = member.guild.channels.cache.get(logChannelId);
-        if (!channel) return;
+const LEAVE_MESSAGES = [
+  'Goodbye {user}! Hope to see you again. ❤️',
+  '{user} has left the server.',
+  'See you later, {user}! 👋',
+  '{user} headed out. Take care!',
+  'Goodbye {user}. We will miss you. 😢',
+  '{user} has left the server. Take care!',
+  'Looks like {user} is heading out. 👀',
+  '{user} has left. Goodbye!',
+  'See you around, {user}! 🥲',
+  '{user} is off to somewhere else.'
+];
 
-        let moderator = null;
-        let reason = null;
-        try {
-            const auditLogs = await member.guild.fetchAuditLogs({
-                type: AuditLogEvent.MemberKick,
-                limit: 5
-            });
-            const entry = auditLogs.entries.find(
-                e => e.target.id === member.id && Date.now() - e.createdTimestamp < 5000
-            );
-            if (entry) {
-                moderator = entry.executor;
-                reason = entry.reason;
-            }
-        } catch {}
+function getRandomLeaveMessage(user) {
+  const message =
+    LEAVE_MESSAGES[
+      Math.floor(Math.random() * LEAVE_MESSAGES.length)
+    ];
 
-        if (moderator && moderator.bot) return;
+  return message.replace('{user}', user);
+}
+
+module.exports = async function guildMemberRemove(member) {
+  try {
+    const leaveChannelId = process.env.WELCOME_CHANNEL_ID;
+
+    if (leaveChannelId) {
+      const channel = member.guild.channels.cache.get(leaveChannelId);
+
+      if (channel && channel.isTextBased()) {
+        const leaveMessage = getRandomLeaveMessage(member.user.tag);
 
         const embed = new EmbedBuilder()
-            .setAuthor({ name: moderator ? 'Member Kicked' : 'Member Left', iconURL: member.user.displayAvatarURL() });
+          .setColor(0xed4245)
+          .setDescription(leaveMessage)
+          .setTimestamp();
 
-        if (moderator) {
-            embed.setDescription(`${member.user.tag} was kicked`)
-                .addFields(
-                    { name: 'Moderator', value: `${moderator} (${moderator.id})` },
-                    { name: 'Reason', value: reason || 'No reason provided' }
-                );
-        } else {
-            embed.setDescription(`${member.user} left the server`);
-        }
-
-        embed.setFooter({ text: `User ID: ${member.id}` }).setTimestamp();
-
-        channel.send({ embeds: [embed] }).catch(() => {});
+        await channel.send({
+          embeds: [embed]
+        });
+      }
     }
+
+    await pool.query(
+      `
+      UPDATE member_joins
+      SET left_at = NOW()
+      WHERE user_id = $1
+        AND guild_id = $2
+        AND left_at IS NULL
+      `,
+      [member.id, member.guild.id]
+    );
+  } catch (error) {
+    console.error(
+      `[Leave] Error handling ${member.user.tag} leaving ${member.guild.name}:`,
+      error
+    );
+  }
 };
