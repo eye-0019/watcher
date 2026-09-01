@@ -199,8 +199,13 @@ module.exports = {
             try {
                 await message.channel.sendTyping();
 
+                // Pass BOTH the Discord message and cleaned text
+                // so the AI can identify who is talking.
                 const reply =
-                    await getAiReply(userMessage);
+                    await getAiReply(
+                        message,
+                        userMessage
+                    );
 
                 if (!reply) {
                     await message.reply(
