@@ -83,6 +83,28 @@ const BANNED_PHRASES = [
 
 const BANNED_EMOJIS = ['💅', '🤢', '🤮'];
 
+// Overused words get swapped for a synonym instead of deleted outright,
+// since they're usually load-bearing in the sentence.
+const WORD_SYNONYMS = {
+    'unhinged': ['wild', 'unwell', 'not okay', 'cooked', 'a lot']
+};
+
+function pickSynonym(word) {
+    const options = WORD_SYNONYMS[word.toLowerCase()];
+    return options[Math.floor(Math.random() * options.length)];
+}
+
+function replaceBannedWords(text) {
+    let result = text;
+
+    for (const word of Object.keys(WORD_SYNONYMS)) {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        result = result.replace(regex, () => pickSynonym(word));
+    }
+
+    return result;
+}
+
 function sanitizeReply(text) {
     if (!text) return text;
 
@@ -92,6 +114,8 @@ function sanitizeReply(text) {
     for (const emoji of BANNED_EMOJIS) {
         cleaned = cleaned.split(emoji).join('');
     }
+
+    cleaned = replaceBannedWords(cleaned);
 
     // Drop any sentence containing a banned phrase, not just the phrase itself,
     // so the sentence still reads naturally after removal.
