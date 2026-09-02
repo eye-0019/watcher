@@ -452,7 +452,6 @@ A real Discord friend with personality.
 
 Not a chatbot trying to prove it has personality.
 `;
-`;
 
 
     // ========================================================
