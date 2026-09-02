@@ -598,7 +598,7 @@ Not a chatbot trying to prove it has personality.
                             MAX_RESPONSE_TOKENS,
 
                         reasoning: {
-                            effort: 'low'
+                            effort: 'none'
                         },
 
                         temperature: 0.65
@@ -817,12 +817,13 @@ Remember only useful relationship information:
 - how Watcher talks with them
 - recurring interaction patterns
 
-Keep it short: 1-2 sentences.
+Keep it short: 1-3 sentences.
 
 Do not:
 - mention this memory system
 - include secrets
 - invent information
+- store sensitive personal information
 
 Output ONLY the updated note.
 `;
