@@ -1,76 +1,67 @@
-const { EmbedBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
+const {
+    EmbedBuilder,
+    ChannelType,
+    PermissionFlagsBits
+} = require('discord.js');
+
 const { addMessageXp } = require('../utils/xpStore');
 const { getResponse } = require('../utils/customCommandsStore');
 const { trackMessage, TIMEOUT_MS } = require('../utils/antiSpam');
-const { setTicket, getChannelForUser, getUserForChannel } = require('../utils/dmTicketsStore');
-const { isScamLink } = require('../utils/scamLinkFilter');
-const { getAiReply } = require('../utils/aiChat');
 
-const ANTI_SPAM_MESSAGES = [
-    'bro chill 😭',
-    'Slow down, you are sending messages way too fast.',
-    'okay we get it 💀',
-    'Please stop spamming.',
-    'my guy relax 😤',
-    'Take it easy for a second.',
-    'bro is fighting the send button 🤦',
-    'You are sending messages too quickly.',
-    'why are you sending all that 😭',
-    'Give the server a second.'
-];
+const {
+    setTicket,
+    getChannelForUser,
+    getUserForChannel
+} = require('../utils/dmTicketsStore');
 
-function getRandomAntiSpamMessage() {
-    return ANTI_SPAM_MESSAGES[
-        Math.floor(Math.random() * ANTI_SPAM_MESSAGES.length)
-    ];
-}
+const { isScamLink } =
+    require('../utils/scamLinkFilter');
 
-const LEVEL_UP_MESSAGES = [
-    '{user} just reached **level {level}**! 😼',
-    'Nice, {user}! You are now **level {level}**.',
-    '{user} hit **level {level}**. Keep going! 🗣️',
-    'Look at {user} reaching **level {level}**.',
-    '{user} is now **level {level}**! 👀',
-    '{user} reached **level {level}**.',
-    'You made it to **level {level}**, {user}!',
-    '{user} just leveled up to **level {level}**! 😭',
-    '**Level {level}** unlocked for {user}.',
-    '{user} is officially **level {level}**. ☝️'
-];
+const { getAiReply } =
+    require('../utils/aiChat');
 
-function getRandomLevelUpMessage(user, level) {
-    const message =
-        LEVEL_UP_MESSAGES[
-            Math.floor(Math.random() * LEVEL_UP_MESSAGES.length)
-        ];
-
-    return message
-        .replaceAll('{user}', user)
-        .replaceAll('{level}', level);
-}
+const EXEMPT_USER_IDS = new Set([
+    '1443431290492948611',
+    ...(process.env.EXEMPT_USER_IDS || '')
+        .split(',')
+        .map(id => id.trim())
+        .filter(Boolean)
+]);
 
 async function getOrCreateTicketChannel(client, user) {
-    const guildId = process.env.GUILD_ID;
-    const guild = client.guilds.cache.get(guildId);
+    const guildId =
+        process.env.GUILD_ID;
 
-    if (!guild) return null;
+    const guild =
+        client.guilds.cache.get(guildId);
 
-    const existingId = await getChannelForUser(user.id);
+    if (!guild) {
+        return null;
+    }
+
+    const existingId =
+        await getChannelForUser(user.id);
 
     if (existingId) {
-        const existing = guild.channels.cache.get(existingId);
+        const existing =
+            guild.channels.cache.get(existingId);
 
-        if (existing) return existing;
+        if (existing) {
+            return existing;
+        }
     }
 
     const overwrites = [
         {
             id: guild.roles.everyone.id,
-            deny: [PermissionFlagsBits.ViewChannel]
+            deny: [
+                PermissionFlagsBits.ViewChannel
+            ]
         }
     ];
 
-    const staffRoleId = process.env.STAFF_ROLE_ID;
+    const staffRoleId =
+        process.env.STAFF_ROLE_ID;
 
     if (staffRoleId) {
         overwrites.push({
@@ -82,18 +73,37 @@ async function getOrCreateTicketChannel(client, user) {
         });
     }
 
-    const channel = await guild.channels.create({
-        name: `dm-${user.username}`
-            .toLowerCase()
-            .replace(/[^a-z0-9-]/g, '')
-            .slice(0, 90) || `dm-${user.id}`,
-        type: ChannelType.GuildText,
-        parent: process.env.MODMAIL_CATEGORY_ID || undefined,
-        permissionOverwrites: overwrites
-    }).catch(() => null);
+    const channel =
+        await guild.channels.create({
+            name:
+                `dm-${user.username}`
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]/g, '')
+                    .slice(0, 90) ||
+                `dm-${user.id}`,
+
+            type: ChannelType.GuildText,
+
+            parent:
+                process.env.MODMAIL_CATEGORY_ID ||
+                undefined,
+
+            permissionOverwrites:
+                overwrites
+        }).catch(error => {
+            console.error(
+                '❌ Failed to create DM ticket channel:',
+                error
+            );
+
+            return null;
+        });
 
     if (channel) {
-        await setTicket(user.id, channel.id);
+        await setTicket(
+            user.id,
+            channel.id
+        );
     }
 
     return channel;
@@ -103,188 +113,344 @@ module.exports = {
     name: 'messageCreate',
 
     async execute(message, client) {
-        if (message.author.bot) return;
 
-        if (message.guild) {
-            const ticketUserId = await getUserForChannel(message.channel.id);
+        if (message.author.bot) {
+            return;
+        }
 
-            if (ticketUserId) {
-                const user = await client.users
+        // ========================================================
+        // Direct messages
+        // ========================================================
+
+        if (!message.guild) {
+
+            const channel =
+                await getOrCreateTicketChannel(
+                    client,
+                    message.author
+                );
+
+            if (!channel) {
+                return;
+            }
+
+            const embed =
+                new EmbedBuilder()
+                    .setColor(0xFFFFFF)
+
+                    .setAuthor({
+                        name: message.author.tag,
+                        iconURL:
+                            message.author
+                                .displayAvatarURL()
+                    })
+
+                    .setDescription(
+                        message.content?.slice(0, 1900) ||
+                        '*No content*'
+                    )
+
+                    .setFooter({
+                        text:
+                            'Reply in this channel to message them back'
+                    })
+
+                    .setTimestamp();
+
+            await channel
+                .send({ embeds: [embed] })
+                .catch(error => {
+                    console.error(
+                        '❌ Failed to forward DM:',
+                        error
+                    );
+                });
+
+            return;
+        }
+
+        // ========================================================
+        // Staff replying to an open DM ticket
+        // ========================================================
+
+        const ticketUserId =
+            await getUserForChannel(
+                message.channel.id
+            );
+
+        if (ticketUserId) {
+
+            const user =
+                await client.users
                     .fetch(ticketUserId)
                     .catch(() => null);
 
-                if (user && message.content) {
-                    user.send(message.content).catch(() => {});
-                }
-
-                return;
-            }
-
-            const aiChannelId = process.env.AI_CHANNEL_ID;
-
-            if (
-                aiChannelId &&
-                message.channel.id === aiChannelId &&
-                message.mentions.has(client.user)
-            ) {
-                const cleanContent = message.content
-                    .replace(/<@!?\d+>/g, '')
-                    .trim();
-
-                const reply = await getAiReply(cleanContent);
-
-                if (reply) {
-                    message.channel.send(reply).catch(() => {});
-                }
-
-                return;
-            }
-
-            if (isScamLink(message.content)) {
-                message.delete().catch(() => {});
-                return;
-            }
-
-            const picsChannelId = process.env.PICS_CHANNEL_ID;
-
-            if (
-                picsChannelId &&
-                message.channel.id === picsChannelId
-            ) {
-                const hasImage = message.attachments.some(
-                    a => a.contentType?.startsWith('image/')
-                );
-
-                if (!hasImage) {
-                    message.delete().catch(() => {});
-                } else {
-                    message
-                        .react('⬆️')
-                        .then(() => message.react('⬇️'))
-                        .catch(() => {});
-                }
-
-                return;
-            }
-
-            const exemptIds = (process.env.EXEMPT_USER_IDS || '')
-                .split(',')
-                .map(s => s.trim())
-                .filter(Boolean);
-
-            const isExempt = exemptIds.includes(message.author.id);
-
-            const isSpamming =
-                !isExempt &&
-                trackMessage(
-                    message.guild.id,
-                    message.author.id
-                );
-
-            if (isSpamming) {
-                message.delete().catch(() => {});
-
-                const member = await message.guild.members
-                    .fetch(message.author.id)
-                    .catch(() => null);
-
-                if (member && member.moderatable) {
-                    member
-                        .timeout(
-                            TIMEOUT_MS,
-                            'Auto anti-spam'
-                        )
-                        .catch(() => {});
-                }
-
-                const randomMessage =
-                    getRandomAntiSpamMessage();
-
-                message.author
-                    .send(randomMessage)
+            if (user && message.content) {
+                user
+                    .send(message.content)
                     .catch(() => {});
-
-                const mainChannelId =
-                    process.env.MAIN_CHANNEL_ID;
-
-                const mainChannel = mainChannelId
-                    ? message.guild.channels.cache.get(
-                        mainChannelId
-                    )
-                    : null;
-
-                if (mainChannel) {
-                    mainChannel
-                        .send(
-                            `${message.author} ${randomMessage}`
-                        )
-                        .catch(() => {});
-                }
-
-                return;
-            }
-
-            const result = await addMessageXp(
-                message.author.id
-            );
-
-            if (result && result.leveledUp) {
-                const levelUpMessage =
-                    getRandomLevelUpMessage(
-                        message.author.toString(),
-                        result.newLevel
-                    );
-
-                message.channel
-                    .send(levelUpMessage)
-                    .catch(() => {});
-            }
-
-            const firstWord = message.content
-                .trim()
-                .split(/\s+/)[0];
-
-            if (firstWord) {
-                const response =
-                    await getResponse(firstWord);
-
-                if (response) {
-                    message.channel
-                        .send(response)
-                        .catch(() => {});
-                }
             }
 
             return;
         }
 
-        const channel =
-            await getOrCreateTicketChannel(
-                client,
-                message.author
+        // ========================================================
+        // AI CHAT
+        // ========================================================
+
+        const aiChannelId =
+            process.env.AI_CHANNEL_ID;
+
+        const watcherMentioned =
+            message.mentions.has(client.user);
+
+        if (
+            aiChannelId &&
+            message.channel.id === aiChannelId &&
+            watcherMentioned
+        ) {
+
+            // Remove ONLY Watcher's actual mention.
+            // Everything else in the user's message stays.
+            const watcherMention =
+                new RegExp(
+                    `<@!?${client.user.id}>`,
+                    'g'
+                );
+
+            const userMessage =
+                message.content
+                    .replace(
+                        watcherMention,
+                        ''
+                    )
+                    .trim();
+
+            console.log(
+                `🤖 AI message from ${message.author.username}: "${userMessage}"`
             );
 
-        if (!channel) return;
+            if (!userMessage) {
 
-        const embed = new EmbedBuilder()
-            .setColor(0xFFFFFF)
-            .setAuthor({
-                name: message.author.tag,
-                iconURL:
-                    message.author.displayAvatarURL()
-            })
-            .setDescription(
-                message.content?.slice(0, 1900) ||
-                '*No content*'
+                await message
+                    .reply(
+                        'yo 😭 you gotta actually say something'
+                    )
+                    .catch(() => {});
+
+                return;
+            }
+
+            try {
+
+                await message.channel
+                    .sendTyping();
+
+                const reply =
+                    await getAiReply(
+                        message,
+                        userMessage
+                    );
+
+                if (!reply) {
+
+                    await message
+                        .reply(
+                            'uhh my brain is not working rn 😭 check the bot logs'
+                        )
+                        .catch(() => {});
+
+                    return;
+                }
+
+                await message.reply(reply);
+
+            } catch (error) {
+
+                console.error(
+                    '❌ AI message handling failed:',
+                    error
+                );
+
+                await message
+                    .reply(
+                        'something broke on my end 😭'
+                    )
+                    .catch(() => {});
+            }
+
+            return;
+        }
+
+        // ========================================================
+        // Scam/phishing links
+        // ========================================================
+
+        if (
+            isScamLink(
+                message.content
             )
-            .setFooter({
-                text:
-                    'Reply in this channel to message them back'
-            })
-            .setTimestamp();
+        ) {
 
-        channel
-            .send({ embeds: [embed] })
-            .catch(() => {});
+            await message
+                .delete()
+                .catch(() => {});
+
+            return;
+        }
+
+        // ========================================================
+        // Pics-only channel
+        // ========================================================
+
+        const picsChannelId =
+            process.env.PICS_CHANNEL_ID;
+
+        if (
+            picsChannelId &&
+            message.channel.id === picsChannelId
+        ) {
+
+            const hasImage =
+                message.attachments.some(
+                    attachment =>
+                        attachment.contentType
+                            ?.startsWith('image/')
+                );
+
+            if (!hasImage) {
+
+                await message
+                    .delete()
+                    .catch(() => {});
+
+            } else {
+
+                message
+                    .react('⬆️')
+                    .then(() =>
+                        message.react('⬇️')
+                    )
+                    .catch(() => {});
+            }
+
+            return;
+        }
+
+        // ========================================================
+        // Anti-spam
+        // ========================================================
+
+        const isExempt =
+            EXEMPT_USER_IDS.has(
+                message.author.id
+            );
+
+        if (!isExempt) {
+
+            const spamResult =
+                trackMessage(
+                    message.guild.id,
+                    message.author.id
+                );
+
+            if (spamResult) {
+
+                await message
+                    .delete()
+                    .catch(() => {});
+
+                const member =
+                    await message.guild.members
+                        .fetch(message.author.id)
+                        .catch(() => null);
+
+                if (member?.moderatable) {
+
+                    await member
+                        .timeout(
+                            TIMEOUT_MS,
+                            'Auto anti-spam'
+                        )
+                        .catch(error => {
+                            console.error(
+                                '❌ Failed to timeout spammer:',
+                                error
+                            );
+                        });
+                }
+
+                await message.channel
+                    .send(
+                        `${message.author} bro chill 😭`
+                    )
+                    .catch(() => {});
+
+                await message.author
+                    .send(
+                        'yo 😭 you were sending messages too fast, so Watcher hit you with a short timeout. chill for a sec.'
+                    )
+                    .catch(() => {});
+
+                return;
+            }
+        }
+
+        // ========================================================
+        // XP
+        // ========================================================
+
+        try {
+
+            const xpResult =
+                await addMessageXp(
+                    message.author.id
+                );
+
+            if (
+                xpResult?.leveledUp
+            ) {
+
+                await message.channel
+                    .send(
+                        `${message.author} just reached **Level ${xpResult.newLevel}**! 🎉`
+                    )
+                    .catch(() => {});
+            }
+
+        } catch (error) {
+
+            console.error(
+                '❌ Failed to add message XP:',
+                error
+            );
+        }
+
+        // ========================================================
+        // Custom commands
+        // ========================================================
+
+        try {
+
+            const response =
+                await getResponse(
+                    message.content
+                        .trim()
+                        .split(/\s+/)[0]
+                );
+
+            if (response) {
+
+                await message.channel
+                    .send(response);
+            }
+
+        } catch (error) {
+
+            console.error(
+                '❌ Failed to process custom command:',
+                error
+            );
+        }
     }
 };
