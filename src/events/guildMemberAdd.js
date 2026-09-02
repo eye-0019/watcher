@@ -1,3 +1,4 @@
+
 const { EmbedBuilder } = require('discord.js');
 const { pool } = require('../utils/db');
 const { trackJoin } = require('../utils/raidGuard');
@@ -24,8 +25,11 @@ function getRandomWelcomeMessage(user) {
   return message.replace('{user}', user);
 }
 
-module.exports = async function guildMemberAdd(member) {
-  try {
+module.exports = {
+  name: 'guildMemberAdd',
+
+  async execute(member) {
+    try {
     const raidState = trackJoin(member.guild.id, member.id);
 
     if (raidState.isRaid) {
@@ -83,5 +87,6 @@ module.exports = async function guildMemberAdd(member) {
       `[Welcome] Error handling ${member.user.tag} joining ${member.guild.name}:`,
       error
     );
+  }
   }
 };
