@@ -73,6 +73,47 @@ async function getRecentChannelContext(message) {
 
 
 // ============================================================
+// Banned content filter (hard enforcement, not just prompt rules)
+// ============================================================
+
+const BANNED_PHRASES = [
+    'go touch grass',
+    'touch grass'
+];
+
+const BANNED_EMOJIS = ['💅', '🤢', '🤮'];
+
+function sanitizeReply(text) {
+    if (!text) return text;
+
+    let cleaned = text;
+
+    // Strip banned emojis outright
+    for (const emoji of BANNED_EMOJIS) {
+        cleaned = cleaned.split(emoji).join('');
+    }
+
+    // Drop any sentence containing a banned phrase, not just the phrase itself,
+    // so the sentence still reads naturally after removal.
+    const lower = cleaned.toLowerCase();
+    const hasBannedPhrase = BANNED_PHRASES.some(p => lower.includes(p));
+
+    if (hasBannedPhrase) {
+        const sentences = cleaned.match(/[^.!?]+[.!?]*/g) || [cleaned];
+
+        cleaned = sentences
+            .filter(s => !BANNED_PHRASES.some(p => s.toLowerCase().includes(p)))
+            .join(' ')
+            .trim();
+    }
+
+    cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+
+    return cleaned;
+}
+
+
+// ============================================================
 // Main AI reply function
 // ============================================================
 
@@ -571,7 +612,7 @@ Not a chatbot trying to prove it has personality.
         }
 
 
-        const reply =
+        let reply =
             data?.choices?.[0]?.message?.content?.trim();
 
 
@@ -587,6 +628,13 @@ Not a chatbot trying to prove it has personality.
             );
 
             return null;
+        }
+
+        reply = sanitizeReply(reply);
+
+        if (!reply) {
+            // Everything got filtered out — fall back rather than send an empty message.
+            reply = 'my brain just short-circuited ngl, say that again';
         }
 
 
