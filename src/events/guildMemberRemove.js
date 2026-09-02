@@ -23,8 +23,11 @@ function getRandomLeaveMessage(user) {
     return message.replace('{user}', user);
 }
 
-module.exports = async function guildMemberRemove(member) {
-    try {
+module.exports = {
+    name: 'guildMemberRemove',
+
+    async execute(member) {
+        try {
         const leaveChannelId = process.env.WELCOME_CHANNEL_ID;
 
         if (leaveChannelId) {
@@ -71,5 +74,6 @@ module.exports = async function guildMemberRemove(member) {
             `[Leave] Error handling ${member.user.tag} leaving ${member.guild.name}:`,
             error
         );
+    }
     }
 };
