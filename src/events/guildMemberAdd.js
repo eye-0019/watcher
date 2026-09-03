@@ -1,4 +1,3 @@
-
 const { EmbedBuilder } = require('discord.js');
 const { pool } = require('../utils/db');
 const { trackJoin } = require('../utils/raidGuard');
@@ -30,63 +29,80 @@ module.exports = {
 
   async execute(member) {
     try {
-    const raidState = trackJoin(member.guild.id, member.id);
-
-    if (raidState.isRaid) {
-      console.log(
-        `[RaidGuard] Raid detected in ${member.guild.name}: ${raidState.joinCount} joins in ${raidState.windowSeconds}s`
+      const raidState = trackJoin(
+        member.guild.id,
+        member.id
       );
-    }
 
-    const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
-
-    if (welcomeChannelId) {
-      const channel = member.guild.channels.cache.get(welcomeChannelId);
-
-      if (channel && channel.isTextBased()) {
-        const welcomeMessage = getRandomWelcomeMessage(member.toString());
-
-        const embed = new EmbedBuilder()
-          .setColor(0x5865f2)
-          .setDescription(welcomeMessage)
-          .setTimestamp();
-
-        await channel.send({
-          embeds: [embed]
-        });
+      if (raidState.isRaid) {
+        console.log(
+          `[RaidGuard] Raid detected in ${member.guild.name}: ${raidState.joinCount} joins in ${raidState.windowSeconds}s`
+        );
       }
-    }
 
-    const autoRoleId = process.env.AUTO_ROLE_ID;
+      const welcomeChannelId =
+        process.env.WELCOME_CHANNEL_ID;
 
-    if (autoRoleId) {
-      const role = member.guild.roles.cache.get(autoRoleId);
-
-      if (role) {
-        try {
-          await member.roles.add(role);
-        } catch (error) {
-          console.error(
-            `[Welcome] Failed to add auto role to ${member.user.tag}:`,
-            error
+      if (welcomeChannelId) {
+        const channel =
+          member.guild.channels.cache.get(
+            welcomeChannelId
           );
+
+        if (channel && channel.isTextBased()) {
+          const welcomeMessage =
+            getRandomWelcomeMessage(
+              member.toString()
+            );
+
+          const embed =
+            new EmbedBuilder()
+              .setColor(0x5865f2)
+              .setDescription(welcomeMessage)
+              .setTimestamp();
+
+          await channel.send({
+            embeds: [embed]
+          });
         }
       }
-    }
 
-    await pool.query(
-      `
-      INSERT INTO member_joins (user_id, guild_id, joined_at)
-      VALUES ($1, $2, NOW())
-      ON CONFLICT DO NOTHING
-      `,
-      [member.id, member.guild.id]
-    );
-  } catch (error) {
-    console.error(
-      `[Welcome] Error handling ${member.user.tag} joining ${member.guild.name}:`,
-      error
-    );
-  }
+      const autoRoleId =
+        process.env.AUTO_ROLE_ID;
+
+      if (autoRoleId) {
+        const role =
+          member.guild.roles.cache.get(autoRoleId);
+
+        if (role) {
+          try {
+            await member.roles.add(role);
+          } catch (error) {
+            console.error(
+              `[Welcome] Failed to add auto role to ${member.user.tag}:`,
+              error
+            );
+          }
+        }
+      }
+
+      await pool.query(
+        `
+        INSERT INTO member_joins (user_id, guild_id, joined_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT DO NOTHING
+        `,
+        [
+          member.id,
+          member.guild.id
+        ]
+      );
+
+    } catch (error) {
+      console.error(
+        `[Welcome] Error handling ${member.user.tag} joining ${member.guild.name}:`,
+        error
+      );
+    }
   }
 };
