@@ -248,7 +248,8 @@ module.exports = {
                 const reply =
                     await getAiReply(
                         message,
-                        userMessage
+                        userMessage,
+                        client
                     );
 
                 if (!reply) {
