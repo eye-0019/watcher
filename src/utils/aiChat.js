@@ -141,10 +141,30 @@ function sanitizeReply(text) {
 // Main AI reply function
 // ============================================================
 
-async function getAiReply(message, userMessage) {
+async function getAiReply(message, userMessage, client) {
 
     const apiKey = process.env.OPENROUTER_API_KEY;
     const model = DEFAULT_MODEL;
+    const logChannelId = process.env.LOG_CHANNEL_ID;
+
+    // Helper to send logs to Discord instead of console
+    async function sendLog(content) {
+        if (!client || !logChannelId) {
+            console.log(content);
+            return;
+        }
+
+        try {
+            const logChannel = await client.channels.fetch(logChannelId);
+            if (logChannel?.isTextBased()) {
+                await logChannel.send(content).catch(() => console.log(content));
+            } else {
+                console.log(content);
+            }
+        } catch {
+            console.log(content);
+        }
+    }
 
     if (!apiKey) {
         console.error(
@@ -557,7 +577,7 @@ Not a chatbot trying to prove it has personality.
 
     try {
 
-        console.log(
+        await sendLog(
             `🤖 Sending OpenRouter request using model: ${model}`
         );
 
@@ -625,13 +645,14 @@ Not a chatbot trying to prove it has personality.
 
         if (data?.usage) {
 
-            console.log(
-                '🧠 OpenRouter usage:',
+            await sendLog(
+                '🧠 OpenRouter usage:\n```json\n' +
                 JSON.stringify(
                     data.usage,
                     null,
                     2
-                )
+                ) +
+                '\n```'
             );
         }
 
@@ -662,9 +683,7 @@ Not a chatbot trying to prove it has personality.
         }
 
 
-        console.log(
-            '✅ AI reply generated.'
-        );
+        await sendLog('✅ AI reply generated.');
 
 
         // ====================================================
