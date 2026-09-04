@@ -114,4 +114,4 @@ async function initDb() {
   `);
 }
 
-module.exports = { pool, initDb };
+module.exports = { pool, initDb };grep -A15 "ai_user_notes" src/utils/db.js
