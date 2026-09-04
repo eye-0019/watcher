@@ -1,6 +1,6 @@
 // ============================================================
-// Watcher AI Chat Core
-// Main AI handler
+// Watcher AI Chat Core v2.1
+// Full context + memory + fallback support
 // ============================================================
 
 
@@ -26,9 +26,68 @@ const {
 
 
 
-const MAX_RESPONSE_TOKENS = 150;
+const {
+    getRecentMessages,
+    saveMessage,
+    getNotes,
+    bumpExchangeCount,
+    NOTES_UPDATE_EVERY
+} = require('./aiMemoryStore');
 
 
+
+const MAX_RESPONSE_TOKENS = 250;
+
+const CONTEXT_LIMIT = 15;
+
+
+
+// ============================================================
+// Load recent Discord messages
+// ============================================================
+
+async function getChannelContext(message) {
+
+    try {
+
+        const messages =
+            await message.channel.messages.fetch({
+                limit: CONTEXT_LIMIT
+            });
+
+
+
+        return Array
+            .from(messages.values())
+            .reverse()
+            .map(msg => {
+
+                return `${msg.author.username}: ${msg.content}`;
+
+            })
+            .join('\n');
+
+
+
+    } catch(error) {
+
+        console.error(
+            "Failed getting Discord context:",
+            error
+        );
+
+
+        return "No recent Discord context.";
+
+    }
+
+}
+
+
+
+// ============================================================
+// Main AI Function
+// ============================================================
 
 async function getAiReply(
     message,
@@ -42,26 +101,6 @@ async function getAiReply(
 
 
 
-    if (!apiKey) {
-
-        const error =
-            new Error(
-                'Missing OpenRouter API Key'
-            );
-
-
-        await sendOwnerError(
-            client,
-            error
-        );
-
-
-        return "Something broke on my end. I'll notify the owner and he'll look into it soon. Sorry for the inconvenience.";
-
-    }
-
-
-
     const username =
         message.author.username;
 
@@ -71,9 +110,93 @@ async function getAiReply(
 
 
 
+    if (!apiKey) {
+
+        const error =
+            new Error(
+                "Missing OpenRouter API key"
+            );
+
+
+        await sendOwnerError(
+            client,
+            error,
+            {
+                username,
+                message:userMessage
+            }
+        );
+
+
+        return "Something broke on my end. I'll notify the owner and he'll look into it soon. Sorry for the inconvenience.";
+
+    }
+
+
+
     const currentTime =
         new Date()
-            .toLocaleString();
+        .toLocaleString(
+            "en-US",
+            {
+                timeZone:
+                    "America/New_York"
+            }
+        );
+
+
+
+    // ========================================================
+    // Load memory + context
+    // ========================================================
+
+
+    const memory =
+        await getNotes(userId)
+        .catch(() => ({
+            notes:
+            "No saved memories."
+        }));
+
+
+
+    const previousMessages =
+        await getRecentMessages(userId)
+        .catch(() => []);
+
+
+
+    const discordContext =
+        await getChannelContext(
+            message
+        );
+
+
+
+    const userHistory =
+        previousMessages
+        .slice(-10)
+        .map(msg => {
+
+            return `${msg.role}: ${msg.content}`;
+
+        })
+        .join('\n');
+
+
+
+    const combinedContext = `
+
+RECENT DISCORD CHAT:
+
+${discordContext}
+
+
+USER HISTORY:
+
+${userHistory}
+
+`;
 
 
 
@@ -85,18 +208,19 @@ async function getAiReply(
             userId,
 
             userId === process.env.OWNER_ID
-                ? 'SERVER OWNER'
-                : 'SERVER MEMBER',
+                ? "SERVER OWNER"
+                : "SERVER MEMBER",
 
             currentTime,
 
-            "Use previous memories if available.",
+            memory.notes,
 
-            "Use recent Discord context when useful."
+            combinedContext
 
         );
-
-
+    // ============================================================
+// Send request with fallback models
+// ============================================================
 
 
     const models =
@@ -113,7 +237,7 @@ async function getAiReply(
     ) {
 
 
-        const start =
+        const startTime =
             Date.now();
 
 
@@ -134,8 +258,11 @@ async function getAiReply(
 
             const timeout =
                 setTimeout(
-                    () =>
-                        controller.abort(),
+                    () => {
+
+                        controller.abort();
+
+                    },
 
                     30000
                 );
@@ -145,19 +272,31 @@ async function getAiReply(
             const response =
                 await fetch(
 
-                    'https://openrouter.ai/api/v1/chat/completions',
+                    "https://openrouter.ai/api/v1/chat/completions",
 
                     {
 
-                        method:'POST',
+                        method:
+                            "POST",
 
-                        headers: {
 
-                            'Content-Type':
-                                'application/json',
+                        headers:
+                        {
 
-                            'Authorization':
-                                `Bearer ${apiKey}`
+                            "Content-Type":
+                                "application/json",
+
+
+                            "Authorization":
+                                `Bearer ${apiKey}`,
+
+
+                            "HTTP-Referer":
+                                "https://watcher-bot-iobe.onrender.com",
+
+
+                            "X-Title":
+                                "Watcher Discord Bot"
 
                         },
 
@@ -166,37 +305,50 @@ async function getAiReply(
                             controller.signal,
 
 
-                        body: JSON.stringify({
+                        body:
+                            JSON.stringify({
 
-                            model,
-
-                            messages:[
-
-                                {
-                                    role:'system',
-
-                                    content:
-                                        systemPrompt
-                                },
-
-                                {
-                                    role:'user',
-
-                                    content:
-                                        userMessage
-                                }
-
-                            ],
+                                model,
 
 
-                            max_tokens:
-                                MAX_RESPONSE_TOKENS,
+                                messages:
+                                [
+
+                                    {
+
+                                        role:
+                                            "system",
+
+                                        content:
+                                            systemPrompt
+
+                                    },
 
 
-                            temperature:
-                                0.65
+                                    {
 
-                        })
+                                        role:
+                                            "user",
+
+                                        content:
+                                            userMessage
+
+                                    }
+
+                                ],
+
+
+
+                                max_tokens:
+                                    MAX_RESPONSE_TOKENS,
+
+
+
+                                temperature:
+                                    0.7
+
+
+                            })
 
                     }
 
@@ -208,10 +360,12 @@ async function getAiReply(
 
 
 
-            if (!response.ok) {
+            if (
+                !response.ok
+            ) {
 
                 throw new Error(
-                    `${model} failed: ${response.status}`
+                    `${model} failed (${response.status})`
                 );
 
             }
@@ -224,12 +378,18 @@ async function getAiReply(
 
 
             const reply =
-                data?.choices?.[0]?.message?.content
-                    ?.trim();
+                data
+                ?.choices
+                ?.[0]
+                ?.message
+                ?.content
+                ?.trim();
 
 
 
-            if (!reply) {
+            if (
+                !reply
+            ) {
 
                 throw new Error(
                     `${model} returned empty response`
@@ -240,13 +400,19 @@ async function getAiReply(
 
 
             const responseTime =
-                Date.now() - start;
+                Date.now() - startTime;
 
 
 
             recordSuccess(
                 responseTime,
                 model
+            );
+
+
+
+            console.log(
+                `✅ AI reply generated using ${model} (${responseTime}ms)`
             );
 
 
@@ -264,7 +430,9 @@ async function getAiReply(
             );
 
 
+
             recordFailure();
+
 
 
             lastError =
@@ -273,23 +441,25 @@ async function getAiReply(
 
         }
 
-
     }
-
+    // ============================================================
+// Handle complete failure
+// ============================================================
 
 
     await sendOwnerError(
 
         client,
 
-        lastError || new Error(
-            'All AI models failed'
-        ),
+        lastError ||
+            new Error(
+                "All AI models failed"
+            ),
 
         {
 
             model:
-                models.join(', '),
+                models.join(", "),
 
             username,
 
@@ -308,8 +478,92 @@ async function getAiReply(
 
 
 
+// ============================================================
+// Save AI conversation
+// ============================================================
+
+
+async function saveConversation(
+
+    userId,
+
+    userMessage,
+
+    reply
+
+) {
+
+
+    try {
+
+
+        await saveMessage(
+
+            userId,
+
+            "user",
+
+            userMessage
+
+        );
+
+
+
+        await saveMessage(
+
+            userId,
+
+            "assistant",
+
+            reply
+
+        );
+
+
+
+        const count =
+            await bumpExchangeCount(
+                userId
+            );
+
+
+
+        if (
+            count >= NOTES_UPDATE_EVERY
+        ) {
+
+            console.log(
+                `🧠 Memory update needed for ${userId}`
+            );
+
+        }
+
+
+
+    } catch(error) {
+
+
+        console.error(
+            "Failed saving conversation:",
+            error
+        );
+
+
+    }
+
+}
+
+
+
+// ============================================================
+// Export
+// ============================================================
+
+
 module.exports = {
 
-    getAiReply
+    getAiReply,
+
+    saveConversation
 
 };
