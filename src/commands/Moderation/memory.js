@@ -1,4 +1,4 @@
-const { getNotes } = require("../utils/aiMemoryStore");
+const { getNotes } = require("../../utils/aiMemoryStore");
 
 module.exports = {
     name: "memory",
