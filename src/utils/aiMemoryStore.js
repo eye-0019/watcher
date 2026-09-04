@@ -33,6 +33,7 @@ async function saveMessage(userId, role, content) {
     );
 }
 
+
 // ============================================================
 // Permanent relationship memory
 // ============================================================
@@ -40,7 +41,14 @@ async function saveMessage(userId, role, content) {
 async function getNotes(userId) {
     const { rows } = await pool.query(
         `
-        SELECT notes, exchange_count
+        SELECT 
+            notes,
+            profile,
+            personality,
+            projects,
+            importance,
+            exchange_count,
+            updated_at
         FROM ai_user_notes
         WHERE user_id = $1
         `,
@@ -50,12 +58,18 @@ async function getNotes(userId) {
     if (!rows.length) {
         return {
             notes: null,
-            exchange_count: 0
+            profile: {},
+            personality: {},
+            projects: {},
+            importance: 0,
+            exchange_count: 0,
+            updated_at: null
         };
     }
 
     return rows[0];
 }
+
 
 async function bumpExchangeCount(userId) {
     const { rows } = await pool.query(
@@ -79,25 +93,95 @@ async function bumpExchangeCount(userId) {
     return rows[0].exchange_count;
 }
 
+
+// ============================================================
+// Save memory
+// Keeps old memories instead of deleting them.
+// ============================================================
+
 async function saveNotes(userId, notes) {
     await pool.query(
         `
         INSERT INTO ai_user_notes (
             user_id,
             notes,
+            importance,
             exchange_count
         )
-        VALUES ($1, $2, 0)
+        VALUES ($1, $2, 1, 0)
 
         ON CONFLICT (user_id)
         DO UPDATE SET
-            notes = $2,
-            exchange_count = 0,
+            notes =
+                CASE
+                    WHEN ai_user_notes.notes IS NULL
+                    THEN $2
+                    ELSE ai_user_notes.notes || E'\\n' || $2
+                END,
+
+            importance =
+                LEAST(ai_user_notes.importance + 1, 10),
+
             updated_at = now()
         `,
         [userId, notes]
     );
 }
+
+
+// ============================================================
+// Advanced memory update
+// Updates specific memory categories.
+// ============================================================
+
+async function updateMemory(userId, {
+    profile,
+    personality,
+    projects,
+    importance
+}) {
+
+    await pool.query(
+        `
+        INSERT INTO ai_user_notes (
+            user_id,
+            profile,
+            personality,
+            projects,
+            importance
+        )
+        VALUES ($1, $2, $3, $4, $5)
+
+        ON CONFLICT (user_id)
+        DO UPDATE SET
+
+            profile =
+                ai_user_notes.profile || $2,
+
+            personality =
+                ai_user_notes.personality || $3,
+
+            projects =
+                ai_user_notes.projects || $4,
+
+            importance =
+                GREATEST(
+                    ai_user_notes.importance,
+                    $5
+                ),
+
+            updated_at = now()
+        `,
+        [
+            userId,
+            profile || {},
+            personality || {},
+            projects || {},
+            importance || 0
+        ]
+    );
+}
+
 
 module.exports = {
     getRecentMessages,
@@ -105,5 +189,6 @@ module.exports = {
     getNotes,
     bumpExchangeCount,
     saveNotes,
+    updateMemory,
     NOTES_UPDATE_EVERY
 };
