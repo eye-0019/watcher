@@ -88,9 +88,21 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS ai_user_notes (
       user_id TEXT PRIMARY KEY,
       notes TEXT,
+      profile JSONB DEFAULT '{}'::jsonb,
+      personality JSONB DEFAULT '{}'::jsonb,
+      projects JSONB DEFAULT '{}'::jsonb,
+      importance INTEGER DEFAULT 0,
       exchange_count INTEGER NOT NULL DEFAULT 0,
       updated_at TIMESTAMPTZ DEFAULT now()
     );
+  `);
+
+  await pool.query(`
+    ALTER TABLE ai_user_notes
+    ADD COLUMN IF NOT EXISTS profile JSONB DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS personality JSONB DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS projects JSONB DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS importance INTEGER DEFAULT 0;
   `);
 
   await pool.query(`
