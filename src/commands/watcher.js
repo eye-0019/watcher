@@ -9,27 +9,14 @@ const {
 } = require("../utils/aiHealth");
 
 
-
 module.exports = {
 
-    data:
-        new SlashCommandBuilder()
+    data: new SlashCommandBuilder()
 
         .setName("watcher")
 
         .setDescription(
-            "Watcher control panel"
-        )
-
-        .addSubcommand(
-            sub =>
-                sub
-
-                .setName("status")
-
-                .setDescription(
-                    "View Watcher's health"
-                )
+            "View Watcher AI status"
         ),
 
 
@@ -59,7 +46,7 @@ module.exports = {
             .setDescription(
 `
 AI Status:
-🟢 ${health.status}
+${health.status}
 
 Current Model:
 ${health.currentModel}
@@ -86,13 +73,8 @@ ${health.lastError || "None"}
 
 
         await interaction.reply({
-
-            embeds:[
-                embed
-            ]
-
+            embeds: [embed]
         });
-
 
     }
 
