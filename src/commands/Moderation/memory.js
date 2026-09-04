@@ -1,46 +1,49 @@
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { getNotes } = require("../../utils/aiMemoryStore");
 
 module.exports = {
-    name: "memory",
-    description: "View Watcher's memory about a user",
+    data: new SlashCommandBuilder()
+        .setName("memory")
+        .setDescription("View Watcher's memory about a user")
+        .addUserOption(option =>
+            option
+                .setName("user")
+                .setDescription("User to check memory for")
+                .setRequired(true)
+        ),
 
-    async execute(message) {
+    async execute(interaction) {
 
         // owner only
-        if (message.author.id !== process.env.OWNER_ID) {
-            return message.reply("nah 😭");
+        if (interaction.user.id !== process.env.OWNER_ID) {
+            return interaction.reply({
+                content: "nah 😭",
+                ephemeral: true
+            });
         }
 
-        const user = message.mentions.users.first();
-
-        if (!user) {
-            return message.reply(
-                "mention someone so i can check 👀"
-            );
-        }
+        const user = interaction.options.getUser("user");
 
         const memory = await getNotes(user.id);
 
         if (!memory || memory.exchange_count === 0) {
-            return message.reply(
+            return interaction.reply(
                 `i don't have any memories about ${user.username} yet 🫩`
             );
         }
 
-        const notes = memory.notes || "No notes saved.";
+        const embed = new EmbedBuilder()
+            .setTitle("🧠 Watcher Memory")
+            .setDescription(
+                `**User:** ${user.username}\n` +
+                `**ID:** ${user.id}\n\n` +
+                `**Notes:**\n${memory.notes || "No notes saved."}\n\n` +
+                `**Conversations remembered:** ${memory.exchange_count}`
+            )
+            .setTimestamp();
 
-        message.reply({
-            embeds: [
-                {
-                    title: "🧠 Watcher Memory",
-                    description:
-                        `**User:** ${user.username}\n` +
-                        `**ID:** ${user.id}\n\n` +
-                        `**Notes:**\n${notes}\n\n` +
-                        `**Conversations remembered:** ${memory.exchange_count}`,
-                    timestamp: new Date()
-                }
-            ]
+        await interaction.reply({
+            embeds: [embed]
         });
     }
 };
