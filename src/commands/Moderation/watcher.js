@@ -20,13 +20,9 @@ module.exports = {
         ),
 
 
-
     async execute(interaction) {
 
-
-        const health =
-            getHealth();
-
+        const health = getHealth();
 
 
         const uptime =
@@ -35,30 +31,29 @@ module.exports = {
             );
 
 
-
         const embed =
             new EmbedBuilder()
 
-            .setTitle(
-                "Watcher Status"
-            )
+                .setTitle(
+                    "Watcher Status"
+                )
 
-            .setDescription(
+                .setDescription(
 `
 AI Status:
-${health.status}
+${health.status || "unknown"}
 
 Current Model:
-${health.currentModel}
+${health.currentModel || "unknown"}
 
 Response Time:
-${health.lastResponseTime}ms
+${health.lastResponseTime || 0}ms
 
 Requests:
-${health.totalRequests}
+${health.totalRequests || 0}
 
 Failed:
-${health.failedRequests}
+${health.failedRequests || 0}
 
 Uptime:
 ${uptime} minutes
@@ -66,20 +61,14 @@ ${uptime} minutes
 Last Error:
 ${health.lastError || "None"}
 `
-            )
+                )
 
-            .setTimestamp();
-
+                .setTimestamp();
 
 
         await interaction.reply({
-
-            embeds: [
-                embed
-            ]
-
+            embeds: [embed]
         });
-
 
     }
 
