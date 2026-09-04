@@ -1,4 +1,3 @@
-
 const {
     SlashCommandBuilder,
     EmbedBuilder
@@ -7,7 +6,7 @@ const {
 
 const {
     getHealth
-} = require("../utils/aiHealth");
+} = require("../../utils/aiHealth");
 
 
 module.exports = {
@@ -17,7 +16,7 @@ module.exports = {
         .setName("watcher")
 
         .setDescription(
-            "View Watcher AI status"
+            "View Watcher's AI status"
         ),
 
 
@@ -74,8 +73,13 @@ ${health.lastError || "None"}
 
 
         await interaction.reply({
-            embeds: [embed]
+
+            embeds: [
+                embed
+            ]
+
         });
+
 
     }
 
