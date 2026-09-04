@@ -1,24 +1,22 @@
 // ============================================================
-// Watcher AI Health Tracker
-// Tracks uptime, response speed, and status
+// Watcher AI Health Tracker v2
 // ============================================================
 
 
 const startTime = Date.now();
 
 
-
 let status = "online";
 
 let currentModel = "unknown";
 
-let lastResponseTime = null;
+let lastResponseTime = 0;
 
 let totalRequests = 0;
 
 let failedRequests = 0;
 
-let lastSuccess = null;
+let lastError = null;
 
 
 
@@ -49,9 +47,8 @@ function recordSuccess(
 
     currentModel = model;
 
-    lastResponseTime = responseTime;
-
-    lastSuccess = new Date();
+    lastResponseTime =
+        responseTime;
 
     totalRequests++;
 
@@ -59,21 +56,21 @@ function recordSuccess(
 
 
 
-function recordFailure() {
+function recordFailure(error) {
 
     failedRequests++;
 
     totalRequests++;
+
+    lastError =
+        error?.message ||
+        String(error);
 
 }
 
 
 
 function getHealth() {
-
-    const uptime =
-        Date.now() - startTime;
-
 
     return {
 
@@ -83,16 +80,15 @@ function getHealth() {
 
         lastResponseTime,
 
-        lastSuccess,
-
         totalRequests,
 
         failedRequests,
 
-        uptime:
+        lastError,
 
+        uptime:
             Math.floor(
-                uptime / 1000
+                (Date.now() - startTime) / 1000
             )
 
     };
