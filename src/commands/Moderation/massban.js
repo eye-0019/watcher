@@ -1,46 +1,133 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { logAction } = require('../../utils/logAction');
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { createLog } = require("../../logger/logger");
+const channels = require("../../logger/channels");
+
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('massban')
-        .setDescription('Ban multiple users by ID (space-separated)')
+
+        .setName("massban")
+        .setDescription("Ban multiple members")
+
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.BanMembers
+        )
+
         .addStringOption(option =>
-            option.setName('userids')
-                .setDescription('User IDs separated by spaces')
-                .setRequired(true))
+            option
+                .setName("users")
+                .setDescription("User IDs separated by spaces")
+                .setRequired(true)
+        )
+
         .addStringOption(option =>
-            option.setName('reason')
-                .setDescription('Reason for banning')
-                .setRequired(false))
-        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+            option
+                .setName("reason")
+                .setDescription("Reason for bans")
+                .setRequired(false)
+        ),
+
+
 
     async execute(interaction) {
-        const ids = interaction.options.getString('userids').split(/\s+/).filter(Boolean);
-        const reason = interaction.options.getString('reason') || 'No reason provided';
 
-        await interaction.deferReply();
+        const users =
+            interaction.options
+                .getString("users")
+                .split(/\s+/);
 
-        let success = 0;
-        let failed = 0;
 
-        for (const id of ids) {
+        const reason =
+            interaction.options.getString("reason")
+            || "No reason provided";
+
+
+        let banned = [];
+
+
+
+        for (const id of users) {
+
             try {
-                await interaction.guild.bans.create(id, { reason });
-                success++;
-            } catch {
-                failed++;
-            }
+
+                await interaction.guild.members.ban(
+                    id,
+                    {
+                        reason
+                    }
+                );
+
+                banned.push(id);
+
+            } catch {}
+
         }
 
-        await logAction(interaction.guild, {
-            action: 'Mass Ban',
-            moderator: interaction.user,
-            target: interaction.user,
-            reason: `${success} banned, ${failed} failed. Reason: ${reason}`,
-            color: 0x95A5A6
+
+
+        await interaction.reply({
+            content:
+                `Banned ${banned.length} members.`,
+            ephemeral: true
         });
 
-        return interaction.editReply(`Mass ban complete. Success: ${success}, Failed: ${failed}.`);
+
+
+        await createLog(interaction.guild, {
+
+            type: "moderation",
+
+            action: "Mass Ban",
+
+
+            executor:
+                interaction.user.id,
+
+
+            description:
+                `${interaction.user.tag} mass banned ${banned.length} members.\nReason: ${reason}`,
+
+
+            severity: "critical",
+
+
+            logChannel:
+                channels.moderation.ban,
+
+
+            metadata: {
+
+                users: banned,
+
+                count: banned.length,
+
+                reason
+
+            },
+
+
+            color: 0xff0000,
+
+
+            fields: [
+
+                {
+                    name: "Moderator",
+                    value:
+                        `${interaction.user.tag} (${interaction.user.id})`
+                },
+
+                {
+                    name: "Users",
+                    value:
+                        banned.length
+                            ? banned.join("\n")
+                            : "None"
+                }
+
+            ]
+
+        });
+
     }
 };
