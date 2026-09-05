@@ -1,27 +1,98 @@
-const { EmbedBuilder } = require('discord.js');
+const { createLog } = require("../logger/logger");
+const channels = require("../logger/channels");
+
 
 module.exports = {
-    name: 'messageUpdate',
+    name: "messageUpdate",
+
     async execute(oldMessage, newMessage) {
-        if (!newMessage.guild || newMessage.author?.bot) return;
+
+        if (!newMessage.guild) return;
+        if (newMessage.author?.bot) return;
+
+
+        // Ignore if content did not change
         if (oldMessage.content === newMessage.content) return;
 
-        const logChannelId = process.env.LOG_CHANNEL_ID;
-        const channel = newMessage.guild.channels.cache.get(logChannelId);
-        if (!channel) return;
 
-        const sentTime = `<t:${Math.floor(newMessage.createdTimestamp / 1000)}:F>`;
+        await createLog(newMessage.guild, {
 
-        const embed = new EmbedBuilder()
-            .setAuthor({ name: 'Message Edited', iconURL: newMessage.author?.displayAvatarURL() || null })
-            .setDescription(`Message from ${newMessage.author} edited in ${newMessage.channel}\nit was sent at ${sentTime}\n[Jump to message](${newMessage.url})`)
-            .addFields(
-                { name: 'Before', value: oldMessage.content?.slice(0, 500) || '*No content*' },
-                { name: 'After', value: newMessage.content?.slice(0, 500) || '*No content*' }
-            )
-            .setFooter({ text: `User ID: ${newMessage.author?.id || 'Unknown'}` })
-            .setTimestamp();
+            type: "message",
 
-        channel.send({ embeds: [embed] }).catch(() => {});
+            action: "Message Edited",
+
+
+            target: newMessage.author
+                ? newMessage.author.id
+                : null,
+
+
+            channel: newMessage.channel.id,
+
+
+            description:
+                `A message was edited in <#${newMessage.channel.id}>.`,
+
+
+            severity: "normal",
+
+
+            logChannel: channels.messages.edit,
+
+
+            metadata: {
+
+                author: {
+                    id: newMessage.author.id,
+                    tag: newMessage.author.tag
+                },
+
+
+                channel: {
+                    id: newMessage.channel.id,
+                    name: newMessage.channel.name
+                },
+
+
+                before: oldMessage.content || "[Empty]",
+
+                after: newMessage.content || "[Empty]"
+
+            },
+
+
+            color: 0x3498db,
+
+
+            fields: [
+
+                {
+                    name: "Author",
+                    value:
+                        `${newMessage.author.tag} (${newMessage.author.id})`
+                },
+
+                {
+                    name: "Channel",
+                    value:
+                        `<#${newMessage.channel.id}>`
+                },
+
+                {
+                    name: "Before",
+                    value:
+                        oldMessage.content?.slice(0, 1024) || "[Empty]"
+                },
+
+                {
+                    name: "After",
+                    value:
+                        newMessage.content?.slice(0, 1024) || "[Empty]"
+                }
+
+            ]
+
+        });
+
     }
 };
