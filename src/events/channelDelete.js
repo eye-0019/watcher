@@ -1,7 +1,5 @@
-const { AuditLogEvent } = require("discord.js");
 const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
-
 
 module.exports = {
     name: "channelDelete",
@@ -11,62 +9,33 @@ module.exports = {
         if (!channel.guild) return;
 
 
-        let executor = null;
-
-
-        try {
-            const logs = await channel.guild.fetchAuditLogs({
-                type: AuditLogEvent.ChannelDelete,
-                limit: 5
-            });
-
-
-            const entry = logs.entries.find(
-                e => e.target.id === channel.id
-            );
-
-
-            if (entry) {
-                executor = entry.executor;
-            }
-
-        } catch {}
-
-
-
         await createLog(channel.guild, {
 
-            type: "server",
+            type: "channel",
 
             action: "Channel Deleted",
 
-
             target: channel.id,
 
-
-            executor: executor
-                ? executor.id
-                : null,
-
-
-            channel: channel.id,
+            executor: null,
 
 
             description:
-                `Channel **#${channel.name}** was deleted.`,
+                `Channel deleted: ${channel.name}`,
 
 
-            severity: "high",
+            severity: "warning",
 
 
-            logChannel: channels.server.channels,
+            logChannel:
+                channels.channels.delete,
 
 
             metadata: {
 
-                channelId: channel.id,
+                channelName: channel.name,
 
-                name: channel.name,
+                channelId: channel.id,
 
                 type: channel.type
 
@@ -79,21 +48,13 @@ module.exports = {
             fields: [
 
                 {
-                    name: "Channel ID",
-                    value: channel.id
+                    name: "Channel",
+                    value: `${channel.name} (${channel.id})`
                 },
 
                 {
                     name: "Type",
-                    value: `${channel.type}`,
-                    inline: true
-                },
-
-                {
-                    name: "Deleted By",
-                    value: executor
-                        ? `${executor.tag} (${executor.id})`
-                        : "Unknown"
+                    value: `${channel.type}`
                 }
 
             ]
