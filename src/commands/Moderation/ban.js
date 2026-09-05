@@ -1,40 +1,117 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { logAction } = require('../../utils/logAction');
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { createLog } = require("../../logger/logger");
+const channels = require("../../logger/channels");
+
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('ban')
-        .setDescription('Ban a member')
+        .setName("ban")
+        .setDescription("Ban a member")
+        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
+
         .addUserOption(option =>
-            option.setName('target')
-                .setDescription('The member to ban')
-                .setRequired(true))
+            option
+                .setName("user")
+                .setDescription("User to ban")
+                .setRequired(true)
+        )
+
         .addStringOption(option =>
-            option.setName('reason')
-                .setDescription('Reason for banning')
-                .setRequired(false))
-        .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
+            option
+                .setName("reason")
+                .setDescription("Reason for ban")
+                .setRequired(false)
+        ),
+
+
 
     async execute(interaction) {
-        const target = interaction.options.getMember('target');
-        const reason = interaction.options.getString('reason') || 'No reason provided';
 
-        if (!target) {
-            return interaction.reply({ content: 'Could not find that member.', ephemeral: true });
-        }
-        if (!target.bannable) {
-            return interaction.reply({ content: 'I cannot ban that member.', ephemeral: true });
+        const user = interaction.options.getUser("user");
+
+        const reason =
+            interaction.options.getString("reason")
+            || "No reason provided";
+
+
+
+        const member =
+            await interaction.guild.members.fetch(user.id)
+            .catch(() => null);
+
+
+
+        if (!member) {
+            return interaction.reply({
+                content: "User not found.",
+                ephemeral: true
+            });
         }
 
-        await target.ban({ reason });
-        await logAction(interaction.guild, {
-            action: 'Member Banned',
-            moderator: interaction.user,
-            target: target.user,
-            reason,
-            color: 0x95A5A6
+
+
+        await member.ban({
+            reason
         });
 
-        return interaction.reply(`Banned ${target.user.tag}. Reason: ${reason}`);
+
+
+        await interaction.reply({
+            content:
+                `${user.tag} has been banned.`,
+            ephemeral: true
+        });
+
+
+
+        await createLog(interaction.guild, {
+
+            type: "moderation",
+
+            action: "Member Banned",
+
+
+            target: user.id,
+
+
+            executor: interaction.user.id,
+
+
+            description:
+                `${user.tag} was banned.\nReason: ${reason}`,
+
+
+            severity: "critical",
+
+
+            logChannel: channels.moderation.ban,
+
+
+            metadata: {
+
+                username: user.tag,
+
+                userId: user.id,
+
+                reason
+
+            },
+
+
+            color: 0xff0000,
+
+
+            fields: [
+
+                {
+                    name: "Moderator",
+                    value:
+                        `${interaction.user.tag} (${interaction.user.id})`
+                }
+
+            ]
+
+        });
+
     }
 };
