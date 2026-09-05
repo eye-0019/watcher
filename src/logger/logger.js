@@ -1,29 +1,21 @@
 const { pool } = require("../utils/db");
 const { createLogEmbed } = require("./formatter");
 
-
 async function createLog(guild, {
     type,
     action,
     target = null,
     executor = null,
     channel = null,
-
     description,
-
     metadata = {},
-
     severity = "normal",
-
     logChannel,
-
     color = 0xffffff,
-
     fields = []
 }) {
 
-
-    // Save to database
+    // Database log
     try {
         await pool.query(
             `
@@ -54,20 +46,29 @@ async function createLog(guild, {
                 severity
             ]
         );
-
     } catch (error) {
         console.error("Logger database error:", error);
     }
 
 
+    // Discord log
+    if (!logChannel) {
+        console.log("No log channel provided");
+        return;
+    }
 
-    // Send Discord log
-    if (!logChannel) return;
+
+    const discordChannel = await guild.channels.fetch(logChannel)
+        .catch(err => {
+            console.error("Failed to fetch log channel:", err);
+            return null;
+        });
 
 
-    const discordChannel = guild.channels.cache.get(logChannel);
-
-    if (!discordChannel) return;
+    if (!discordChannel) {
+        console.log("Log channel not found:", logChannel);
+        return;
+    }
 
 
     const embed = createLogEmbed({
@@ -80,12 +81,13 @@ async function createLog(guild, {
     });
 
 
-    discordChannel.send({
+    await discordChannel.send({
         embeds: [embed]
-    }).catch(() => {});
+    }).catch(error => {
+        console.error("Failed sending log:", error);
+    });
 
 }
-
 
 
 module.exports = {
