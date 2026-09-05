@@ -113,8 +113,7 @@ async function initDb() {
     );
   `);
 
-  // Advanced logging system
-  await pool.query(`
+   await pool.query(`
     CREATE TABLE IF NOT EXISTS logs (
       id SERIAL PRIMARY KEY,
 
@@ -122,7 +121,6 @@ async function initDb() {
 
       event_type TEXT NOT NULL,
       action TEXT NOT NULL,
-
       target_id TEXT,
       executor_id TEXT,
 
@@ -137,6 +135,8 @@ async function initDb() {
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);
+
 }
+
 
 module.exports = { pool, initDb };

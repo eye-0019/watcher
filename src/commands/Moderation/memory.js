@@ -11,10 +11,7 @@ module.exports = {
                 .setDescription("User to check memory for")
                 .setRequired(true)
         ),
-
     async execute(interaction) {
-
-        // owner only
         if (interaction.user.id !== process.env.OWNER_ID) {
             return interaction.reply({
                 content: "nah 😭",
@@ -23,7 +20,6 @@ module.exports = {
         }
 
         const user = interaction.options.getUser("user");
-
         const memory = await getNotes(user.id);
 
         if (!memory || memory.exchange_count === 0) {
