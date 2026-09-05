@@ -1,7 +1,6 @@
 const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
 
-
 module.exports = {
     name: "messageUpdate",
 
@@ -10,8 +9,6 @@ module.exports = {
         if (!newMessage.guild) return;
         if (newMessage.author?.bot) return;
 
-
-        // Ignore if content did not change
         if (oldMessage.content === newMessage.content) return;
 
 
@@ -21,73 +18,75 @@ module.exports = {
 
             action: "Message Edited",
 
-
             target: newMessage.author
                 ? newMessage.author.id
                 : null,
 
 
-            channel: newMessage.channel.id,
+            executor: null,
 
 
             description:
-                `A message was edited in <#${newMessage.channel.id}>.`,
+                `${newMessage.author ? newMessage.author.tag : "Unknown user"} edited a message`,
 
 
             severity: "normal",
 
 
-            logChannel: channels.messages.edit,
+            logChannel:
+                channels.messages.edit,
 
 
             metadata: {
 
-                author: {
-                    id: newMessage.author.id,
-                    tag: newMessage.author.tag
-                },
+                author: newMessage.author
+                    ? newMessage.author.tag
+                    : null,
 
+                authorId: newMessage.author
+                    ? newMessage.author.id
+                    : null,
 
-                channel: {
-                    id: newMessage.channel.id,
-                    name: newMessage.channel.name
-                },
+                channelId: newMessage.channel.id,
 
+                oldContent:
+                    oldMessage.content || "[Empty]",
 
-                before: oldMessage.content || "[Empty]",
-
-                after: newMessage.content || "[Empty]"
+                newContent:
+                    newMessage.content || "[Empty]"
 
             },
 
 
-            color: 0x3498db,
+            color: 0xffff00,
 
 
             fields: [
 
                 {
                     name: "Author",
-                    value:
-                        `${newMessage.author.tag} (${newMessage.author.id})`
+                    value: newMessage.author
+                        ? `${newMessage.author.tag} (${newMessage.author.id})`
+                        : "Unknown"
                 },
 
                 {
                     name: "Channel",
-                    value:
-                        `<#${newMessage.channel.id}>`
+                    value: `<#${newMessage.channel.id}>`
                 },
 
                 {
                     name: "Before",
-                    value:
-                        oldMessage.content?.slice(0, 1024) || "[Empty]"
+                    value: oldMessage.content
+                        ? oldMessage.content.slice(0, 1024)
+                        : "[Empty]"
                 },
 
                 {
                     name: "After",
-                    value:
-                        newMessage.content?.slice(0, 1024) || "[Empty]"
+                    value: newMessage.content
+                        ? newMessage.content.slice(0, 1024)
+                        : "[Empty]"
                 }
 
             ]
