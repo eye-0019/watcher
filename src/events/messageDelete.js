@@ -1,28 +1,88 @@
-const { EmbedBuilder } = require('discord.js');
+const { createLog } = require("../logger/logger");
+const channels = require("../logger/channels");
+
 
 module.exports = {
-    name: 'messageDelete',
+    name: "messageDelete",
+
     async execute(message) {
-        if (!message.guild || message.author?.bot) return;
 
-        const logChannelId = process.env.LOG_CHANNEL_ID;
-        const channel = message.guild.channels.cache.get(logChannelId);
-        if (!channel) return;
+        // Ignore bots and uncached messages
+        if (!message.guild) return;
+        if (message.author?.bot) return;
 
-        const attachment = message.attachments?.first();
-        const sentTime = `<t:${Math.floor(message.createdTimestamp / 1000)}:F>`;
 
-        const embed = new EmbedBuilder()
-            .setAuthor({ name: 'Message Deleted', iconURL: message.author?.displayAvatarURL() || null })
-            .setDescription(`Message from ${message.author} deleted in ${message.channel}\nit was sent at ${sentTime}\n[Jump to message](${message.url})`)
-            .addFields(
-                { name: 'Message Content', value: message.content?.slice(0, 1000) || '*No content*' }
-            )
-            .setFooter({ text: `User ID: ${message.author?.id || 'Unknown'}` })
-            .setTimestamp();
+        await createLog(message.guild, {
 
-        if (attachment) embed.setImage(attachment.proxyURL || attachment.url);
+            type: "message",
 
-        channel.send({ embeds: [embed] }).catch(() => {});
+            action: "Message Deleted",
+
+
+            target: message.author
+                ? message.author.id
+                : null,
+
+
+            channel: message.channel.id,
+
+
+            description:
+                `A message was deleted in <#${message.channel.id}>.`,
+
+
+            severity: "normal",
+
+
+            logChannel: channels.messages.delete,
+
+
+            metadata: {
+
+                author: message.author
+                    ? {
+                        id: message.author.id,
+                        tag: message.author.tag
+                    }
+                    : null,
+
+
+                channel: {
+                    id: message.channel.id,
+                    name: message.channel.name
+                },
+
+
+                content: message.content || "[No content stored]",
+
+
+                attachments:
+                    [...message.attachments.values()]
+                        .map(file => file.url)
+
+            },
+
+
+            color: 0xff9900,
+
+
+            fields: [
+
+                {
+                    name: "Author",
+                    value: message.author
+                        ? `${message.author.tag} (${message.author.id})`
+                        : "Unknown"
+                },
+
+                {
+                    name: "Channel",
+                    value: `<#${message.channel.id}>`
+                }
+
+            ]
+
+        });
+
     }
 };
