@@ -1,6 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const { pool } = require('../utils/db');
-const { trackJoin } = require('../utils/raidGuard');
+const { recordJoin } = require('../utils/raidGuard');
 
 const WELCOME_MESSAGES = [
   'Welcome {user} to the server! 👀',
@@ -29,14 +29,11 @@ module.exports = {
 
   async execute(member) {
     try {
-      const raidState = trackJoin(
-        member.guild.id,
-        member.id
-      );
+      const newlyDetected = recordJoin(member.guild.id);
 
-      if (raidState.isRaid) {
+      if (newlyDetected) {
         console.log(
-          `[RaidGuard] Raid detected in ${member.guild.name}: ${raidState.joinCount} joins in ${raidState.windowSeconds}s`
+          `[RaidGuard] Raid detected in ${member.guild.name}`
         );
       }
 
