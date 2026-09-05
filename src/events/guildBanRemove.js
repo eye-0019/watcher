@@ -1,31 +1,82 @@
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+const { AuditLogEvent } = require("discord.js");
+const { createLog } = require("../logger/logger");
+const channels = require("../logger/channels");
+
 
 module.exports = {
-    name: 'guildBanRemove',
+    name: "guildBanRemove",
+
     async execute(ban) {
-        const logChannelId = process.env.LOG_CHANNEL_ID;
-        const channel = ban.guild.channels.cache.get(logChannelId);
-        if (!channel) return;
 
         let moderator = null;
+        let reason = null;
+
+
         try {
-            const auditLogs = await ban.guild.fetchAuditLogs({
+            const logs = await ban.guild.fetchAuditLogs({
                 type: AuditLogEvent.MemberBanRemove,
                 limit: 5
             });
-            const entry = auditLogs.entries.find(e => e.target.id === ban.user.id);
-            if (entry) moderator = entry.executor;
+
+
+            const entry = logs.entries.find(
+                e => e.target.id === ban.user.id
+            );
+
+
+            if (entry) {
+                moderator = entry.executor;
+                reason = entry.reason;
+            }
+
         } catch {}
 
-        if (moderator && moderator.bot) return;
 
-        const embed = new EmbedBuilder()
-            .setAuthor({ name: 'Member Unbanned', iconURL: ban.user.displayAvatarURL() })
-            .setDescription(`${ban.user.tag} was unbanned`)
-            .addFields({ name: 'Moderator', value: moderator ? `${moderator} (${moderator.id})` : 'Unknown' })
-            .setFooter({ text: `User ID: ${ban.user.id}` })
-            .setTimestamp();
 
-        channel.send({ embeds: [embed] }).catch(() => {});
+        await createLog(ban.guild, {
+
+            type: "moderation",
+
+            action: "Member Unbanned",
+
+
+            target: ban.user.id,
+
+            executor: moderator
+                ? moderator.id
+                : "Unknown",
+
+
+            description:
+                `${ban.user.tag} was unbanned.\nReason: ${reason || "No reason provided"}`,
+
+
+            severity: "normal",
+
+
+            logChannel: channels.moderation.ban,
+
+
+            metadata: {
+                username: ban.user.tag,
+                userId: ban.user.id,
+                reason: reason || null
+            },
+
+
+            color: 0x00ff00,
+
+
+            fields: [
+                {
+                    name: "Moderator",
+                    value: moderator
+                        ? `${moderator.tag} (${moderator.id})`
+                        : "Unknown"
+                }
+            ]
+
+        });
+
     }
 };
