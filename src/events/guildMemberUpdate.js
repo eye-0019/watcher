@@ -1,7 +1,6 @@
 const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
 
-
 module.exports = {
     name: "guildMemberUpdate",
 
@@ -10,64 +9,35 @@ module.exports = {
         const changes = [];
 
 
-        // Nickname change
         if (oldMember.nickname !== newMember.nickname) {
-
             changes.push(
-                {
-                    name: "Nickname",
-                    value:
-                        `Before: ${oldMember.nickname || oldMember.user.username}\n` +
-                        `After: ${newMember.nickname || newMember.user.username}`
-                }
+                `Nickname: ${oldMember.nickname || "None"} → ${newMember.nickname || "None"}`
             );
-
         }
 
 
-        // Role changes
-        const oldRoles = new Set(
-            oldMember.roles.cache.map(role => role.id)
-        );
-
-        const newRoles = new Set(
-            newMember.roles.cache.map(role => role.id)
-        );
+        const oldRoles = new Set(oldMember.roles.cache.map(r => r.id));
+        const newRoles = new Set(newMember.roles.cache.map(r => r.id));
 
 
-        const addedRoles = [...newRoles]
-            .filter(role => !oldRoles.has(role));
-
-
-        const removedRoles = [...oldRoles]
-            .filter(role => !newRoles.has(role));
+        const addedRoles = [...newRoles].filter(r => !oldRoles.has(r));
+        const removedRoles = [...oldRoles].filter(r => !newRoles.has(r));
 
 
         if (addedRoles.length) {
-
-            changes.push({
-                name: "Roles Added",
-                value: addedRoles
-                    .map(id => `<@&${id}>`)
-                    .join(", ")
-            });
-
+            changes.push(
+                `Roles added: ${addedRoles.map(r => `<@&${r}>`).join(", ")}`
+            );
         }
 
 
         if (removedRoles.length) {
-
-            changes.push({
-                name: "Roles Removed",
-                value: removedRoles
-                    .map(id => `<@&${id}>`)
-                    .join(", ")
-            });
-
+            changes.push(
+                `Roles removed: ${removedRoles.map(r => `<@&${r}>`).join(", ")}`
+            );
         }
 
 
-        // Nothing changed
         if (!changes.length) return;
 
 
@@ -80,27 +50,47 @@ module.exports = {
 
             target: newMember.id,
 
+            executor: null,
+
 
             description:
-                `${newMember.user.tag} was updated.`,
+                `${newMember.user.tag} was updated`,
 
 
             severity: "normal",
 
 
-            logChannel: channels.members.update,
+            logChannel:
+                channels.members.update,
 
 
             metadata: {
+
                 userId: newMember.id,
-                username: newMember.user.tag
+
+                username: newMember.user.tag,
+
+                changes
+
             },
 
 
-            color: 0x3498db,
+            color: 0xffff00,
 
 
-            fields: changes
+            fields: [
+
+                {
+                    name: "Member",
+                    value: `${newMember.user.tag} (${newMember.id})`
+                },
+
+                {
+                    name: "Changes",
+                    value: changes.join("\n").slice(0, 1024)
+                }
+
+            ]
 
         });
 
