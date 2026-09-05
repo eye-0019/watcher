@@ -1,29 +1,98 @@
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+const { AuditLogEvent } = require("discord.js");
+const { createLog } = require("../logger/logger");
+const channels = require("../logger/channels");
+
 
 module.exports = {
-    name: 'roleCreate',
-    async execute(role) {
-        const logChannelId = process.env.LOG_CHANNEL_ID;
-        const logChannel = role.guild.channels.cache.get(logChannelId);
-        if (!logChannel) return;
+    name: "roleCreate",
 
-        let moderator = null;
+    async execute(role) {
+
+        let executor = null;
+
+
         try {
-            const auditLogs = await role.guild.fetchAuditLogs({
+            const logs = await role.guild.fetchAuditLogs({
                 type: AuditLogEvent.RoleCreate,
                 limit: 5
             });
-            const entry = auditLogs.entries.find(e => e.target.id === role.id);
-            if (entry) moderator = entry.executor;
+
+
+            const entry = logs.entries.find(
+                e => e.target.id === role.id
+            );
+
+
+            if (entry) {
+                executor = entry.executor;
+            }
+
         } catch {}
 
-        const embed = new EmbedBuilder()
-            .setAuthor({ name: 'Role Created' })
-            .setDescription(`${role} was created`)
-            .addFields({ name: 'Moderator', value: moderator ? `${moderator} (${moderator.id})` : 'Unknown' })
-            .setFooter({ text: `Role ID: ${role.id}` })
-            .setTimestamp();
 
-        logChannel.send({ embeds: [embed] }).catch(() => {});
+
+        await createLog(role.guild, {
+
+            type: "server",
+
+            action: "Role Created",
+
+
+            target: role.id,
+
+
+            executor: executor
+                ? executor.id
+                : null,
+
+
+            description:
+                `Role **${role.name}** was created.`,
+
+
+            severity: "normal",
+
+
+            logChannel: channels.server.roles,
+
+
+            metadata: {
+
+                roleId: role.id,
+
+                roleName: role.name,
+
+                color: role.hexColor
+
+            },
+
+
+            color: 0x57f287,
+
+
+            fields: [
+
+                {
+                    name: "Role ID",
+                    value: role.id
+                },
+
+                {
+                    name: "Position",
+                    value: `${role.position}`,
+                    inline: true
+                },
+
+                {
+                    name: "Created By",
+                    value: executor
+                        ? `${executor.tag} (${executor.id})`
+                        : "Unknown"
+                }
+
+            ]
+
+        });
+
     }
 };
