@@ -1,7 +1,5 @@
-const { AuditLogEvent } = require("discord.js");
 const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
-
 
 module.exports = {
     name: "channelCreate",
@@ -10,90 +8,47 @@ module.exports = {
 
         if (!channel.guild) return;
 
-
-        let executor = null;
-
-
-        try {
-            const logs = await channel.guild.fetchAuditLogs({
-                type: AuditLogEvent.ChannelCreate,
-                limit: 5
-            });
-
-
-            const entry = logs.entries.find(
-                e => e.target.id === channel.id
-            );
-
-
-            if (entry) {
-                executor = entry.executor;
-            }
-
-        } catch {}
-
-
-
         await createLog(channel.guild, {
 
-            type: "server",
+            type: "channel",
 
             action: "Channel Created",
 
-
             target: channel.id,
 
-
-            executor: executor
-                ? executor.id
-                : null,
-
-
-            channel: channel.id,
-
+            executor: null,
 
             description:
-                `Channel **#${channel.name}** was created.`,
-
+                `Channel created: ${channel.name}`,
 
             severity: "normal",
 
-
-            logChannel: channels.server.channels,
-
+            logChannel:
+                channels.channels.create,
 
             metadata: {
 
-                channelId: channel.id,
+                channelName: channel.name,
 
-                name: channel.name,
+                channelId: channel.id,
 
                 type: channel.type
 
             },
 
-
-            color: 0x57f287,
+            color: 0x00ff00,
 
 
             fields: [
 
                 {
-                    name: "Channel ID",
-                    value: channel.id
+                    name: "Channel",
+                    value: `${channel.name} (${channel.id})`
                 },
 
                 {
                     name: "Type",
-                    value: `${channel.type}`,
-                    inline: true
-                },
-
-                {
-                    name: "Created By",
-                    value: executor
-                        ? `${executor.tag} (${executor.id})`
-                        : "Unknown"
+                    value: `${channel.type}`
                 }
 
             ]
