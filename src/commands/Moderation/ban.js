@@ -2,7 +2,6 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const { createLog } = require("../../logger/logger");
 const channels = require("../../logger/channels");
 
-
 module.exports = {
 
     data: new SlashCommandBuilder()
@@ -27,13 +26,17 @@ module.exports = {
 
     async execute(interaction) {
 
+        await interaction.deferReply({
+            flags: 64
+        });
+
+
         const user = interaction.options.getUser("user");
 
 
         if (!user) {
-            return interaction.reply({
-                content: "You must select a user to ban.",
-                ephemeral: true
+            return interaction.editReply({
+                content: "No user provided."
             });
         }
 
@@ -45,14 +48,26 @@ module.exports = {
 
         try {
 
-            await interaction.guild.members.ban(user.id, {
-                reason
+            const member = await interaction.guild.members.fetch(user.id)
+                .catch(() => null);
+
+
+            if (!member) {
+
+                return interaction.editReply({
+                    content: "User is not in this server."
+                });
+
+            }
+
+
+            await member.ban({
+                reason: `${reason} | Moderator: ${interaction.user.tag}`
             });
 
 
-            await interaction.reply({
-                content: `${user.tag} has been banned.`,
-                ephemeral: true
+            await interaction.editReply({
+                content: `${user.tag} has been banned.`
             });
 
 
@@ -66,52 +81,31 @@ module.exports = {
 
                 executor: interaction.user.id,
 
-
                 description:
                     `${user.tag} was banned.\nReason: ${reason}`,
 
-
                 severity: "critical",
 
-
-                logChannel:
-                    channels.moderation.ban,
-
+                logChannel: channels.moderation.ban,
 
                 metadata: {
-
                     username: user.tag,
-
                     userId: user.id,
-
                     reason
-
                 },
-
 
                 color: 0xff0000,
 
-
                 fields: [
-
                     {
                         name: "Moderator",
                         value:
                             `${interaction.user.tag} (${interaction.user.id})`
-                    },
-
-                    {
-                        name: "Reason",
-                        value: reason
                     }
-
                 ]
 
-
-            }).catch(error => {
-
-                console.error("Ban log failed:", error);
-
+            }).catch(err => {
+                console.error("Ban log failed:", err);
             });
 
 
@@ -120,18 +114,10 @@ module.exports = {
             console.error("Ban command failed:", error);
 
 
-            if (interaction.replied || interaction.deferred) {
+            if (interaction.deferred || interaction.replied) {
 
                 await interaction.editReply({
-                    content: "Failed to ban this user."
-                }).catch(() => {});
-
-
-            } else {
-
-                await interaction.reply({
-                    content: "Failed to ban this user.",
-                    ephemeral: true
+                    content: "Failed to ban user."
                 }).catch(() => {});
 
             }
@@ -139,5 +125,4 @@ module.exports = {
         }
 
     }
-
 };
