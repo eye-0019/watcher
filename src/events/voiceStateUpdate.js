@@ -1,6 +1,6 @@
+
 const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
-
 
 module.exports = {
     name: "voiceStateUpdate",
@@ -9,51 +9,52 @@ module.exports = {
 
         const member = newState.member || oldState.member;
 
-        if (!member || member.user.bot) return;
+        if (!member) return;
 
 
         let action = null;
         let description = null;
 
 
-        // Joined voice channel
-        if (!oldState.channel && newState.channel) {
+        if (!oldState.channelId && newState.channelId) {
 
-            action = "Joined Voice Channel";
+            action = "Voice Joined";
 
             description =
-                `${member.user.tag} joined **${newState.channel.name}**.`;
+                `${member.user.tag} joined ${newState.channel.name}`;
 
         }
 
 
-        // Left voice channel
-        else if (oldState.channel && !newState.channel) {
+        else if (oldState.channelId && !newState.channelId) {
 
-            action = "Left Voice Channel";
+            action = "Voice Left";
 
             description =
-                `${member.user.tag} left **${oldState.channel.name}**.`;
+                `${member.user.tag} left ${oldState.channel.name}`;
 
         }
 
 
-        // Moved voice channel
         else if (
-            oldState.channel &&
-            newState.channel &&
-            oldState.channel.id !== newState.channel.id
+            oldState.channelId &&
+            newState.channelId &&
+            oldState.channelId !== newState.channelId
         ) {
 
-            action = "Moved Voice Channel";
+            action = "Voice Moved";
 
             description =
-                `${member.user.tag} moved from **${oldState.channel.name}** to **${newState.channel.name}**.`;
+                `${member.user.tag} moved from ${oldState.channel.name} to ${newState.channel.name}`;
 
         }
 
 
-        if (!action) return;
+        else {
+
+            return;
+
+        }
 
 
 
@@ -63,13 +64,9 @@ module.exports = {
 
             action,
 
-
             target: member.id,
 
-
-            channel: newState.channel
-                ? newState.channel.id
-                : oldState.channel.id,
+            executor: null,
 
 
             description,
@@ -78,7 +75,8 @@ module.exports = {
             severity: "normal",
 
 
-            logChannel: channels.voice.update,
+            logChannel:
+                channels.voice.update,
 
 
             metadata: {
@@ -87,22 +85,31 @@ module.exports = {
 
                 username: member.user.tag,
 
-
                 oldChannel:
-                    oldState.channel
-                        ? oldState.channel.id
-                        : null,
-
+                    oldState.channelId || null,
 
                 newChannel:
-                    newState.channel
-                        ? newState.channel.id
-                        : null
+                    newState.channelId || null
 
             },
 
 
-            color: 0x5865f2
+            color: 0x5865f2,
+
+
+            fields: [
+
+                {
+                    name: "Member",
+                    value: `${member.user.tag} (${member.id})`
+                },
+
+                {
+                    name: "Action",
+                    value: action
+                }
+
+            ]
 
         });
 
