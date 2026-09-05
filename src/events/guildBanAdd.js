@@ -1,38 +1,50 @@
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+const { AuditLogEvent } = require('discord.js');
+const { logAction } = require('../utils/logAction');
 
 module.exports = {
     name: 'guildBanAdd',
-    async execute(ban) {
-        const logChannelId = process.env.LOG_CHANNEL_ID;
-        const channel = ban.guild.channels.cache.get(logChannelId);
-        if (!channel) return;
 
+    async execute(ban) {
         let moderator = null;
         let reason = null;
+
         try {
             const auditLogs = await ban.guild.fetchAuditLogs({
                 type: AuditLogEvent.MemberBanAdd,
                 limit: 5
             });
-            const entry = auditLogs.entries.find(e => e.target.id === ban.user.id);
+
+            const entry = auditLogs.entries.find(
+                e => e.target.id === ban.user.id
+            );
+
             if (entry) {
                 moderator = entry.executor;
                 reason = entry.reason;
             }
+
         } catch {}
 
         if (moderator && moderator.bot) return;
 
-        const embed = new EmbedBuilder()
-            .setAuthor({ name: 'Member Banned', iconURL: ban.user.displayAvatarURL() })
-            .setDescription(`${ban.user.tag} was banned`)
-            .addFields(
-                { name: 'Moderator', value: moderator ? `${moderator} (${moderator.id})` : 'Unknown' },
-                { name: 'Reason', value: reason || 'No reason provided' }
-            )
-            .setFooter({ text: `User ID: ${ban.user.id}` })
-            .setTimestamp();
 
-        channel.send({ embeds: [embed] }).catch(() => {});
+        await logAction(ban.guild, {
+            eventType: "moderation",
+            action: "Ban",
+
+            moderator: moderator || "Unknown",
+            target: ban.user,
+
+            reason: reason || "No reason provided",
+
+            severity: "high",
+
+            metadata: {
+                username: ban.user.tag,
+                userId: ban.user.id
+            },
+
+            color: 0xFF0000
+        });
     }
 };
