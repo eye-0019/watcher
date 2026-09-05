@@ -112,6 +112,31 @@ async function initDb() {
       updated_at TIMESTAMPTZ DEFAULT now()
     );
   `);
+
+  // Advanced logging system
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS logs (
+      id SERIAL PRIMARY KEY,
+
+      guild_id TEXT NOT NULL,
+
+      event_type TEXT NOT NULL,
+      action TEXT NOT NULL,
+
+      target_id TEXT,
+      executor_id TEXT,
+
+      channel_id TEXT,
+
+      description TEXT,
+
+      metadata JSONB DEFAULT '{}'::jsonb,
+
+      severity TEXT DEFAULT 'normal',
+
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+  `);
 }
 
 module.exports = { pool, initDb };
