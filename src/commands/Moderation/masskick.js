@@ -73,7 +73,7 @@ module.exports = {
         await interaction.reply({
             content:
                 `Kicked ${kicked.length} members.`,
-            ephemeral: true
+            flags: 64
         });
 
 

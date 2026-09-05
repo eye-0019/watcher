@@ -32,7 +32,7 @@ module.exports = {
         if (amount < 1 || amount > 100) {
             return interaction.reply({
                 content: "Amount must be between 1 and 100.",
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -49,7 +49,7 @@ module.exports = {
         await interaction.reply({
             content:
                 `Deleted ${deleted.size} messages.`,
-            ephemeral: true
+            flags: 64
         });
 
 

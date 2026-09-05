@@ -29,7 +29,7 @@ module.exports = {
             const message = await channel.messages.fetch(messageId);
             await message.react(emoji);
         } catch (err) {
-            return interaction.reply({ content: 'Could not find that message in this channel, or the emoji is invalid.', ephemeral: true });
+            return interaction.reply({ content: 'Could not find that message in this channel, or the emoji is invalid.', flags: 64 });
         }
 
         await addReactionRole(messageId, emoji, role.id);

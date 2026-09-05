@@ -15,7 +15,7 @@ module.exports = {
         if (interaction.user.id !== process.env.OWNER_ID) {
             return interaction.reply({
                 content: "nah 😭",
-                ephemeral: true
+                flags: 64
             });
         }
 

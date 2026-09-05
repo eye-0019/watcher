@@ -22,7 +22,7 @@ module.exports = {
         try {
             await target.send(message);
         } catch (err) {
-            return interaction.reply({ content: `Could not DM ${target.tag}. They may have DMs closed.`, ephemeral: true });
+            return interaction.reply({ content: `Could not DM ${target.tag}. They may have DMs closed.`, flags: 64 });
         }
 
         let channelId = await getChannelForUser(target.id);

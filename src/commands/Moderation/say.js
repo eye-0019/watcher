@@ -12,7 +12,7 @@ module.exports = {
 
     async execute(interaction) {
         const message = interaction.options.getString('message');
-        await interaction.reply({ content: 'Sent.', ephemeral: true });
+        await interaction.reply({ content: 'Sent.', flags: 64 });
         await interaction.channel.send(message);
     }
 };

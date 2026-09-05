@@ -16,7 +16,7 @@ module.exports = {
         const warnings = await getWarnings(target.id);
 
         if (warnings.length === 0) {
-            return interaction.reply({ content: `${target.tag} has no warnings.`, ephemeral: true });
+            return interaction.reply({ content: `${target.tag} has no warnings.`, flags: 64 });
         }
 
         const embed = new EmbedBuilder()
@@ -26,6 +26,6 @@ module.exports = {
                 warnings.map((w, i) => `**${i + 1}.** ${w.reason} — by ${w.moderator} (${new Date(w.date).toLocaleDateString()})`).join('\n')
             );
 
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
 };

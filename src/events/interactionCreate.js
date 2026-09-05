@@ -14,7 +14,7 @@ module.exports = {
         // Safe reply — only if the interaction hasn't been touched yet
         return safeReply(interaction, {
           content: 'Unknown command.',
-          ephemeral: true,
+          flags: 64,
         });
       }
 
@@ -28,7 +28,7 @@ module.exports = {
         // The command may have already deferred or replied — use safeReply
         await safeReply(interaction, {
           content: 'There was an error while executing this command.',
-          ephemeral: true,
+          flags: 64,
         });
       }
       return;
@@ -69,9 +69,9 @@ async function safeReply(interaction, options) {
     if (interaction.deferred) {
       await interaction.editReply(options);
     } else if (interaction.replied) {
-      await interaction.followUp({ ...options, ephemeral: true });
+      await interaction.followUp({ ...options, flags: 64 });
     } else {
-      await interaction.reply({ ...options, ephemeral: true });
+      await interaction.reply({ ...options, flags: 64 });
     }
   } catch (err) {
     // Last resort — log but never crash the process

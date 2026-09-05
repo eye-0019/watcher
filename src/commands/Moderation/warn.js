@@ -22,7 +22,7 @@ module.exports = {
 
   async execute(interaction) {
     // Always defer first — prevents the 40060 "already acknowledged" error
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     const targetUser = interaction.options.getUser('target');
     const reason     = interaction.options.getString('reason') ?? 'No reason provided';

@@ -45,7 +45,7 @@ module.exports = {
         .setRequired(false)),
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     const targetUser  = interaction.options.getUser('target');
     const durationKey = interaction.options.getString('duration');

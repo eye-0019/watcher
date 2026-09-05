@@ -15,7 +15,7 @@ module.exports = {
         .setRequired(false)),
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     const userId   = interaction.options.getString('userid');
     const reason   = interaction.options.getString('reason') ?? 'No reason provided';

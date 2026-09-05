@@ -18,7 +18,7 @@ module.exports = {
         .setRequired(false)),
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     const warnId   = interaction.options.getInteger('warnid');
     const reason   = interaction.options.getString('reason') ?? 'No reason provided';

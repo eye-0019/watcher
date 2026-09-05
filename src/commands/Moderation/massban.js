@@ -68,7 +68,7 @@ module.exports = {
         await interaction.reply({
             content:
                 `Banned ${banned.length} members.`,
-            ephemeral: true
+            flags: 64
         });
 
 

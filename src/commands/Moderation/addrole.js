@@ -50,7 +50,7 @@ module.exports = {
         if (!member) {
             return interaction.reply({
                 content: "User not found.",
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -63,7 +63,7 @@ module.exports = {
         await interaction.reply({
             content:
                 `Added ${role.name} to ${user.tag}.`,
-            ephemeral: true
+            flags: 64
         });
 
 

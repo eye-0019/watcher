@@ -13,9 +13,9 @@ module.exports = {
             await message.react('❌');
         } catch (err) {
             console.error('Error adding face reveal reactions:', err);
-            return interaction.reply({ content: 'Could not add reactions to that message.', ephemeral: true });
+            return interaction.reply({ content: 'Could not add reactions to that message.', flags: 64 });
         }
 
-        return interaction.reply({ content: 'Face reveal is now open for rating!', ephemeral: true });
+        return interaction.reply({ content: 'Face reveal is now open for rating!', flags: 64 });
     }
 };
