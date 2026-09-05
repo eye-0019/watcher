@@ -1,89 +1,55 @@
-const { pool } = require('../utils/db');
-const { recordJoin } = require('../utils/raidGuard');
+const { createLog } = require("../logger/logger");
+const channels = require("../logger/channels");
 
-const WELCOME_CHANNEL_ID = '1543125978107347044';
-
-const WELCOME_MESSAGES = [
-  'Welcome {user} to the server! 👀',
-  'Hey {user}, welcome to the server!',
-  'Welcome {user}! Glad to have you here. ❤️',
-  '{user} just joined. Welcome!',
-  'Everyone say hi to {user}! 🗣️',
-  'Hey {user}! Hope you enjoy your time here.',
-  '{user} has arrived. Welcome! 😼',
-  'Welcome in, {user}!',
-  '{user} just pulled up. Welcome! 👌',
-  'Welcome {user}! Make yourself at home.'
-];
-
-function getRandomWelcomeMessage(user) {
-  const message =
-    WELCOME_MESSAGES[
-      Math.floor(Math.random() * WELCOME_MESSAGES.length)
-    ];
-
-  return message.replace('{user}', user);
-}
 
 module.exports = {
-  name: 'guildMemberAdd',
+    name: "guildMemberAdd",
 
-  async execute(member) {
-    try {
-      const newlyDetected = recordJoin(member.guild.id);
+    async execute(member) {
 
-      if (newlyDetected) {
-        console.log(
-          `[RaidGuard] Raid detected in ${member.guild.name}`
-        );
-      }
+        await createLog(member.guild, {
 
-      const channel =
-        member.guild.channels.cache.get(WELCOME_CHANNEL_ID);
+            type: "member",
 
-      if (channel && channel.isTextBased()) {
-        const welcomeMessage =
-          getRandomWelcomeMessage(member.toString());
+            action: "Member Joined",
 
-        await channel.send(welcomeMessage);
-      }
 
-      const autoRoleId =
-        process.env.AUTO_ROLE_ID;
+            target: member.id,
 
-      if (autoRoleId) {
-        const role =
-          member.guild.roles.cache.get(autoRoleId);
 
-        if (role) {
-          try {
-            await member.roles.add(role);
-          } catch (error) {
-            console.error(
-              `[Welcome] Failed to add auto role to ${member.user.tag}:`,
-              error
-            );
-          }
-        }
-      }
+            description:
+                `${member.user.tag} joined the server.`,
 
-      await pool.query(
-        `
-        INSERT INTO member_joins (user_id, guild_id, joined_at)
-        VALUES ($1, $2, NOW())
-        ON CONFLICT DO NOTHING
-        `,
-        [
-          member.id,
-          member.guild.id
-        ]
-      );
 
-    } catch (error) {
-      console.error(
-        `[Welcome] Error handling ${member.user.tag} joining ${member.guild.name}:`,
-        error
-      );
+            severity: "normal",
+
+
+            logChannel: channels.members.join,
+
+
+            metadata: {
+                username: member.user.tag,
+                userId: member.id,
+                accountCreated: member.user.createdAt
+            },
+
+
+            color: 0x00ff99,
+
+
+            fields: [
+                {
+                    name: "Account Created",
+                    value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`
+                },
+                {
+                    name: "Member Count",
+                    value: `${member.guild.memberCount}`,
+                    inline: true
+                }
+            ]
+
+        });
+
     }
-  }
 };
