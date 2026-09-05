@@ -34,11 +34,6 @@ module.exports = {
             || "No reason provided";
 
 
-        await interaction.deferReply({
-            ephemeral: true
-        });
-
-
         try {
 
             await interaction.guild.members.ban(user.id, {
@@ -46,11 +41,11 @@ module.exports = {
             });
 
 
-            await interaction.editReply({
+            await interaction.reply({
                 content:
-                    `${user.tag} has been banned.`
+                    `${user.tag} has been banned.`,
+                ephemeral: true
             });
-
 
 
             createLog(interaction.guild, {
@@ -98,9 +93,11 @@ module.exports = {
 
                 ]
 
-            }).catch(err =>
-                console.error("Ban log failed:", err)
-            );
+            }).catch(err => {
+
+                console.error("Ban log failed:", err);
+
+            });
 
 
         } catch (error) {
@@ -108,12 +105,23 @@ module.exports = {
             console.error("Ban command failed:", error);
 
 
-            await interaction.editReply({
+            if (interaction.replied || interaction.deferred) {
 
-                content:
-                    "Failed to ban this user."
+                await interaction.editReply({
+                    content:
+                        "Failed to ban this user."
+                }).catch(() => {});
 
-            });
+
+            } else {
+
+                await interaction.reply({
+                    content:
+                        "Failed to ban this user.",
+                    ephemeral: true
+                }).catch(() => {});
+
+            }
 
         }
 
