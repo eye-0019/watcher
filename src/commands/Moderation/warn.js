@@ -1,43 +1,99 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { logAction } = require('../../utils/logAction');
-const { addWarning } = require('../../utils/warningsStore');
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { createLog } = require("../../logger/logger");
+const channels = require("../../logger/channels");
+const { addWarning } = require("../../utils/warningsStore");
+
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('warn')
-        .setDescription('Warn a member')
+        .setName("warn")
+        .setDescription("Warn a member")
+        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
         .addUserOption(option =>
-            option.setName('target')
-                .setDescription('The member to warn')
-                .setRequired(true))
+            option
+                .setName("user")
+                .setDescription("User to warn")
+                .setRequired(true)
+        )
         .addStringOption(option =>
-            option.setName('reason')
-                .setDescription('Reason for warning')
-                .setRequired(true))
-        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+            option
+                .setName("reason")
+                .setDescription("Reason for warning")
+                .setRequired(false)
+        ),
+
 
     async execute(interaction) {
-        const target = interaction.options.getMember('target');
-        const reason = interaction.options.getString('reason');
 
-        if (!target) {
-            return interaction.reply({ content: 'Could not find that member.', ephemeral: true });
-        }
+        const user = interaction.options.getUser("user");
+        const reason =
+            interaction.options.getString("reason")
+            || "No reason provided";
 
-        const count = await addWarning(target.id, {
+
+        await addWarning(
+            user.id,
             reason,
-            moderator: interaction.user.tag,
-            date: new Date().toISOString()
+            interaction.user.id
+        );
+
+
+        await interaction.reply({
+            content:
+                `${user.tag} has been warned.`,
+            ephemeral: true
         });
 
-        await logAction(interaction.guild, {
-            action: 'Member Warned',
-            moderator: interaction.user,
-            target: target.user,
-            reason: `${reason} (warning #${count})`,
-            color: 0x95A5A6
+
+
+        await createLog(interaction.guild, {
+
+            type: "moderation",
+
+            action: "Member Warned",
+
+
+            target: user.id,
+
+
+            executor: interaction.user.id,
+
+
+            description:
+                `${user.tag} was warned.\nReason: ${reason}`,
+
+
+            severity: "medium",
+
+
+            logChannel: channels.moderation.warn,
+
+
+            metadata: {
+
+                username: user.tag,
+
+                userId: user.id,
+
+                reason
+
+            },
+
+
+            color: 0xffcc00,
+
+
+            fields: [
+
+                {
+                    name: "Moderator",
+                    value:
+                        `${interaction.user.tag} (${interaction.user.id})`
+                }
+
+            ]
+
         });
 
-        return interaction.reply(`Warned ${target.user.tag}. Total warnings: ${count}. Reason: ${reason}`);
     }
 };
