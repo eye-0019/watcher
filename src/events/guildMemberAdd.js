@@ -1,7 +1,7 @@
 const { pool } = require('../utils/db');
 const { recordJoin } = require('../utils/raidGuard');
 
-const WELCOME_CHANNEL_ID = '1543128041616703548';
+const WELCOME_CHANNEL_ID = '1543125978107347044';
 
 const WELCOME_MESSAGES = [
   'Welcome {user} to the server! 👀',
