@@ -1,21 +1,56 @@
-module.exports = {
-    name: 'interactionCreate',
-    async execute(interaction, client) {
-        if (!interaction.isChatInputCommand() && !interaction.isMessageContextMenuCommand()) return;
+const { Events } = require("discord.js");
 
-        const command = client.commands.get(interaction.commandName);
+module.exports = {
+    name: Events.InteractionCreate,
+
+    async execute(interaction) {
+
+        if (!interaction.isChatInputCommand()) return;
+
+
+        const command = interaction.client.commands.get(
+            interaction.commandName
+        );
+
+
         if (!command) return;
 
+
         try {
+
             await command.execute(interaction);
-        } catch (err) {
-            console.error(`Error executing /${interaction.commandName}:`, err);
-            const errorReply = { content: 'There was an error while executing this command.', ephemeral: true };
+
+
+        } catch (error) {
+
+            console.error(
+                `Error executing /${interaction.commandName}:`,
+                error
+            );
+
+
             if (interaction.replied || interaction.deferred) {
-                await interaction.followUp(errorReply);
+
+                await interaction.editReply({
+                    content:
+                        "There was an error while executing this command."
+                }).catch(() => {});
+
+
             } else {
-                await interaction.reply(errorReply);
+
+                await interaction.reply({
+
+                    content:
+                        "There was an error while executing this command.",
+
+                    ephemeral: true
+
+                }).catch(() => {});
+
             }
+
         }
+
     }
 };
