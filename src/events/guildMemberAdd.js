@@ -1,6 +1,7 @@
-const { EmbedBuilder } = require('discord.js');
 const { pool } = require('../utils/db');
 const { recordJoin } = require('../utils/raidGuard');
+
+const WELCOME_CHANNEL_ID = '1543128041616703548';
 
 const WELCOME_MESSAGES = [
   'Welcome {user} to the server! 👀',
@@ -37,31 +38,14 @@ module.exports = {
         );
       }
 
-      const welcomeChannelId =
-        process.env.WELCOME_CHANNEL_ID;
+      const channel =
+        member.guild.channels.cache.get(WELCOME_CHANNEL_ID);
 
-      if (welcomeChannelId) {
-        const channel =
-          member.guild.channels.cache.get(
-            welcomeChannelId
-          );
+      if (channel && channel.isTextBased()) {
+        const welcomeMessage =
+          getRandomWelcomeMessage(member.toString());
 
-        if (channel && channel.isTextBased()) {
-          const welcomeMessage =
-            getRandomWelcomeMessage(
-              member.toString()
-            );
-
-          const embed =
-            new EmbedBuilder()
-              .setColor(0x5865f2)
-              .setDescription(welcomeMessage)
-              .setTimestamp();
-
-          await channel.send({
-            embeds: [embed]
-          });
-        }
+        await channel.send(welcomeMessage);
       }
 
       const autoRoleId =
