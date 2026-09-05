@@ -20,7 +20,6 @@ module.exports = {
 
             await command.execute(interaction);
 
-
         } catch (error) {
 
             console.error(
@@ -32,20 +31,15 @@ module.exports = {
             if (interaction.replied || interaction.deferred) {
 
                 await interaction.editReply({
-                    content:
-                        "There was an error while executing this command."
+                    content: "There was an error while executing this command."
                 }).catch(() => {});
 
 
             } else {
 
                 await interaction.reply({
-
-                    content:
-                        "There was an error while executing this command.",
-
-                    ephemeral: true
-
+                    content: "There was an error while executing this command.",
+                    flags: 64
                 }).catch(() => {});
 
             }
