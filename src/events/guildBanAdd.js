@@ -33,13 +33,19 @@ module.exports = {
 
 
 
+        if (moderator && moderator.bot) return;
+
+
+
         await createLog(ban.guild, {
 
             type: "moderation",
 
             action: "Member Banned",
 
+
             target: ban.user.id,
+
 
             executor: moderator
                 ? moderator.id
@@ -53,7 +59,8 @@ module.exports = {
             severity: "critical",
 
 
-            logChannel: channels.moderation.ban,
+            logChannel:
+                channels.moderation.ban,
 
 
             metadata: {
@@ -77,6 +84,16 @@ module.exports = {
                     value: moderator
                         ? `${moderator.tag} (${moderator.id})`
                         : "Unknown"
+                },
+
+                {
+                    name: "User ID",
+                    value: ban.user.id
+                },
+
+                {
+                    name: "Reason",
+                    value: reason || "No reason provided"
                 }
 
             ]
