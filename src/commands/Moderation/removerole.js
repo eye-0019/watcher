@@ -1,35 +1,131 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { createLog } = require("../../logger/logger");
+const channels = require("../../logger/channels");
+
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('removerole')
-        .setDescription('Remove a role from a member')
+
+        .setName("removerole")
+        .setDescription("Remove a role from a member")
+
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.ManageRoles
+        )
+
         .addUserOption(option =>
-            option.setName('target')
-                .setDescription('The member to remove the role from')
-                .setRequired(true))
+            option
+                .setName("user")
+                .setDescription("User to remove role from")
+                .setRequired(true)
+        )
+
         .addRoleOption(option =>
-            option.setName('role')
-                .setDescription('The role to remove')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('reason')
-                .setDescription('Reason for removing this role')
-                .setRequired(false))
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+            option
+                .setName("role")
+                .setDescription("Role to remove")
+                .setRequired(true)
+        ),
+
+
+
     async execute(interaction) {
-        const target = interaction.options.getMember('target');
-        const role = interaction.options.getRole('role');
-        const reason = interaction.options.getString('reason') || 'No reason provided';
 
-        if (!target) {
-            return interaction.reply({ content: 'Could not find that member.', ephemeral: true });
-        }
-        if (!target.roles.cache.has(role.id)) {
-            return interaction.reply({ content: `${target.user.tag} doesn't have that role.`, ephemeral: true });
+        const user =
+            interaction.options.getUser("user");
+
+
+        const role =
+            interaction.options.getRole("role");
+
+
+
+        const member =
+            await interaction.guild.members
+                .fetch(user.id)
+                .catch(() => null);
+
+
+
+        if (!member) {
+            return interaction.reply({
+                content: "User not found.",
+                ephemeral: true
+            });
         }
 
-        await target.roles.remove(role, reason);
-        return interaction.reply(`Removed ${role} from ${target.user.tag}. Reason: ${reason}`);
+
+
+        await member.roles.remove(role);
+
+
+
+        await interaction.reply({
+            content:
+                `Removed ${role.name} from ${user.tag}.`,
+            ephemeral: true
+        });
+
+
+
+        await createLog(interaction.guild, {
+
+            type: "moderation",
+
+            action: "Role Removed",
+
+
+            target: user.id,
+
+
+            executor:
+                interaction.user.id,
+
+
+            description:
+                `${role.name} was removed from ${user.tag}.`,
+
+
+            severity: "normal",
+
+
+            logChannel:
+                channels.server.roles,
+
+
+            metadata: {
+
+                userId: user.id,
+
+                username: user.tag,
+
+                roleId: role.id,
+
+                roleName: role.name
+
+            },
+
+
+            color: 0xff9900,
+
+
+            fields: [
+
+                {
+                    name: "Moderator",
+                    value:
+                        `${interaction.user.tag} (${interaction.user.id})`
+                },
+
+                {
+                    name: "Role",
+                    value:
+                        `${role.name} (${role.id})`
+                }
+
+            ]
+
+        });
+
     }
 };
