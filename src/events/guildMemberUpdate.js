@@ -1,56 +1,108 @@
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+const { createLog } = require("../logger/logger");
+const channels = require("../logger/channels");
+
 
 module.exports = {
-    name: 'guildMemberUpdate',
+    name: "guildMemberUpdate",
+
     async execute(oldMember, newMember) {
-        if (newMember.user.bot) return;
 
-        const logChannelId = process.env.LOG_CHANNEL_ID;
-        const channel = newMember.guild.channels.cache.get(logChannelId);
-        if (!channel) return;
+        const changes = [];
 
-        const oldRoles = oldMember.roles.cache;
-        const newRoles = newMember.roles.cache;
 
-        const addedRoles = newRoles.filter(role => !oldRoles.has(role.id));
-        const removedRoles = oldRoles.filter(role => !newRoles.has(role.id));
-
-        if (addedRoles.size > 0 || removedRoles.size > 0) {
-            let moderator = null;
-            try {
-                const auditLogs = await newMember.guild.fetchAuditLogs({
-                    type: AuditLogEvent.MemberRoleUpdate,
-                    limit: 5
-                });
-                const entry = auditLogs.entries.find(e => e.target.id === newMember.id);
-                if (entry) moderator = entry.executor;
-            } catch {}
-
-            const roleText = addedRoles.size > 0
-                ? `was granted ${addedRoles.map(r => r).join(', ')}`
-                : `was removed from ${removedRoles.map(r => r).join(', ')}`;
-
-            const embed = new EmbedBuilder()
-                .setAuthor({ name: 'Member Roles Updated', iconURL: newMember.user.displayAvatarURL() })
-                .setDescription(`${newMember} (${newMember.id}) ${roleText}`)
-                .addFields({ name: 'Moderator', value: moderator ? `${moderator} (${moderator.id})` : 'Unknown' })
-                .setFooter({ text: `User ID: ${newMember.id}` })
-                .setTimestamp();
-
-            channel.send({ embeds: [embed] }).catch(() => {});
-        }
-
+        // Nickname change
         if (oldMember.nickname !== newMember.nickname) {
-            const embed = new EmbedBuilder()
-                .setAuthor({ name: 'Nickname Changed', iconURL: newMember.user.displayAvatarURL() })
-                .addFields(
-                    { name: 'Before', value: oldMember.nickname || '*None*' },
-                    { name: 'After', value: newMember.nickname || '*None*' }
-                )
-                .setFooter({ text: `User ID: ${newMember.id}` })
-                .setTimestamp();
 
-            channel.send({ embeds: [embed] }).catch(() => {});
+            changes.push(
+                {
+                    name: "Nickname",
+                    value:
+                        `Before: ${oldMember.nickname || oldMember.user.username}\n` +
+                        `After: ${newMember.nickname || newMember.user.username}`
+                }
+            );
+
         }
+
+
+        // Role changes
+        const oldRoles = new Set(
+            oldMember.roles.cache.map(role => role.id)
+        );
+
+        const newRoles = new Set(
+            newMember.roles.cache.map(role => role.id)
+        );
+
+
+        const addedRoles = [...newRoles]
+            .filter(role => !oldRoles.has(role));
+
+
+        const removedRoles = [...oldRoles]
+            .filter(role => !newRoles.has(role));
+
+
+        if (addedRoles.length) {
+
+            changes.push({
+                name: "Roles Added",
+                value: addedRoles
+                    .map(id => `<@&${id}>`)
+                    .join(", ")
+            });
+
+        }
+
+
+        if (removedRoles.length) {
+
+            changes.push({
+                name: "Roles Removed",
+                value: removedRoles
+                    .map(id => `<@&${id}>`)
+                    .join(", ")
+            });
+
+        }
+
+
+        // Nothing changed
+        if (!changes.length) return;
+
+
+
+        await createLog(newMember.guild, {
+
+            type: "member",
+
+            action: "Member Updated",
+
+            target: newMember.id,
+
+
+            description:
+                `${newMember.user.tag} was updated.`,
+
+
+            severity: "normal",
+
+
+            logChannel: channels.members.update,
+
+
+            metadata: {
+                userId: newMember.id,
+                username: newMember.user.tag
+            },
+
+
+            color: 0x3498db,
+
+
+            fields: changes
+
+        });
+
     }
 };
