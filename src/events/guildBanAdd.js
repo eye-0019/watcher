@@ -1,5 +1,7 @@
+
 const { AuditLogEvent } = require('discord.js');
-const { logAction } = require('../utils/logAction');
+const { createLog } = require('../logger/logger');
+const channels = require('../logger/channels');
 
 module.exports = {
     name: 'guildBanAdd',
@@ -28,23 +30,30 @@ module.exports = {
         if (moderator && moderator.bot) return;
 
 
-        await logAction(ban.guild, {
-            eventType: "moderation",
-            action: "Ban",
+        await createLog(ban.guild, {
+            type: "moderation",
+            action: "Member Banned",
 
-            moderator: moderator || "Unknown",
-            target: ban.user,
+            target: ban.user.id,
 
-            reason: reason || "No reason provided",
+            executor: moderator
+                ? moderator.id
+                : "Unknown",
+
+            description:
+                `${ban.user.tag} was banned.\nReason: ${reason || "No reason provided"}`,
 
             severity: "high",
 
+            logChannel: channels.moderation.ban,
+
             metadata: {
                 username: ban.user.tag,
-                userId: ban.user.id
+                userId: ban.user.id,
+                reason: reason || null
             },
 
-            color: 0xFF0000
+            color: 0xff0000
         });
     }
 };
