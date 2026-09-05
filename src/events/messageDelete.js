@@ -1,13 +1,11 @@
 const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
 
-
 module.exports = {
     name: "messageDelete",
 
     async execute(message) {
 
-        // Ignore bots and uncached messages
         if (!message.guild) return;
         if (message.author?.bot) return;
 
@@ -18,47 +16,38 @@ module.exports = {
 
             action: "Message Deleted",
 
-
             target: message.author
                 ? message.author.id
                 : null,
 
 
-            channel: message.channel.id,
+            executor: null,
 
 
             description:
-                `A message was deleted in <#${message.channel.id}>.`,
+                `${message.author ? message.author.tag : "Unknown user"}'s message was deleted`,
 
 
             severity: "normal",
 
 
-            logChannel: channels.messages.delete,
+            logChannel:
+                channels.messages.delete,
 
 
             metadata: {
 
                 author: message.author
-                    ? {
-                        id: message.author.id,
-                        tag: message.author.tag
-                    }
+                    ? message.author.tag
                     : null,
 
+                authorId: message.author
+                    ? message.author.id
+                    : null,
 
-                channel: {
-                    id: message.channel.id,
-                    name: message.channel.name
-                },
+                channelId: message.channel.id,
 
-
-                content: message.content || "[No content stored]",
-
-
-                attachments:
-                    [...message.attachments.values()]
-                        .map(file => file.url)
+                content: message.content || "[No content cached]"
 
             },
 
@@ -78,6 +67,13 @@ module.exports = {
                 {
                     name: "Channel",
                     value: `<#${message.channel.id}>`
+                },
+
+                {
+                    name: "Content",
+                    value: message.content
+                        ? message.content.slice(0, 1024)
+                        : "[No content cached]"
                 }
 
             ]
