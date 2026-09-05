@@ -345,7 +345,12 @@ ${userHistory}
 
 
                                 temperature:
-                                    0.7
+                                    0.7,
+
+
+
+                                reasoning:
+                                    { exclude: true }
 
 
                             })
