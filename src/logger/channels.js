@@ -27,5 +27,7 @@ module.exports = {
         update: process.env.VOICE_LOG_CHANNEL
     },
 
-    errors: process.env.ERROR_LOG_CHANNEL
+    bot: {
+        errors: process.env.ERROR_LOG_CHANNEL
+    }
 };
