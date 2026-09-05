@@ -1,4 +1,4 @@
-const { createLog } = require("./logger");
+const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
 
 
@@ -13,6 +13,38 @@ async function logAction(guild, {
     color = 0xffffff,
     fields = []
 }) {
+
+    let logChannel = null;
+
+
+    if (type === "moderation") {
+        logChannel = channels.moderation.ban;
+    }
+
+    else if (type === "member") {
+        logChannel = channels.members.update;
+    }
+
+    else if (type === "message") {
+        logChannel = channels.messages.edit;
+    }
+
+    else if (type === "role") {
+        logChannel = channels.roles.create;
+    }
+
+    else if (type === "channel") {
+        logChannel = channels.channels.create;
+    }
+
+    else if (type === "voice") {
+        logChannel = channels.voice.update;
+    }
+
+    else {
+        logChannel = channels.system;
+    }
+
 
     await createLog(guild, {
 
@@ -34,9 +66,7 @@ async function logAction(guild, {
 
         fields,
 
-        logChannel:
-            channels[type]?.default ||
-            channels.system
+        logChannel
 
     });
 
