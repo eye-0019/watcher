@@ -1,90 +1,33 @@
-const { EmbedBuilder } = require("discord.js");
-const { pool } = require("../utils/db");
-
-
-async function createLog(guild, {
-    type,
-    action,
-    target = null,
-    executor = null,
-    channel = null,
-    description,
-    metadata = {},
-    severity = "normal",
-    logChannel,
-    color = 0xffffff
-}) {
-
-    // Save to database
-    try {
-        await pool.query(
-            `
-            INSERT INTO logs
-            (
-                guild_id,
-                event_type,
-                action,
-                target_id,
-                executor_id,
-                channel_id,
-                description,
-                metadata,
-                severity
-            )
-            VALUES
-            ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-            `,
-            [
-                guild.id,
-                type,
-                action,
-                target,
-                executor,
-                channel,
-                description,
-                metadata,
-                severity
-            ]
-        );
-
-    } catch (err) {
-        console.error("Logger database error:", err);
-    }
-
-
-    // Send Discord log
-    if (!logChannel) return;
-
-    const channelObj = guild.channels.cache.get(logChannel);
-
-    if (!channelObj) return;
-
-
-    const embed = new EmbedBuilder()
-        .setTitle(action)
-        .setDescription(description)
-        .addFields(
-            {
-                name: "Severity",
-                value: severity,
-                inline: true
-            },
-            {
-                name: "Event",
-                value: type,
-                inline: true
-            }
-        )
-        .setColor(color)
-        .setTimestamp();
-
-
-    channelObj.send({
-        embeds: [embed]
-    }).catch(() => {});
-}
-
-
 module.exports = {
-    createLog
+    moderation: {
+        ban: process.env.BAN_LOG_CHANNEL,
+        kick: process.env.KICK_LOG_CHANNEL,
+        warn: process.env.WARN_LOG_CHANNEL,
+        timeout: process.env.TIMEOUT_LOG_CHANNEL
+    },
+
+    members: {
+        join: process.env.JOIN_LOG_CHANNEL,
+        leave: process.env.LEAVE_LOG_CHANNEL,
+        update: process.env.MEMBER_UPDATE_LOG_CHANNEL
+    },
+
+    messages: {
+        delete: process.env.MESSAGE_DELETE_LOG_CHANNEL,
+        edit: process.env.MESSAGE_EDIT_LOG_CHANNEL
+    },
+
+    server: {
+        roles: process.env.ROLE_LOG_CHANNEL,
+        channels: process.env.CHANNEL_LOG_CHANNEL,
+        invites: process.env.INVITE_LOG_CHANNEL
+    },
+
+    voice: {
+        update: process.env.VOICE_LOG_CHANNEL
+    },
+
+    bot: {
+        errors: process.env.ERROR_LOG_CHANNEL
+    }
 };
