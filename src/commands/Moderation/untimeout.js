@@ -1,37 +1,125 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { logAction } = require('../../utils/logAction');
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { createLog } = require("../../logger/logger");
+const channels = require("../../logger/channels");
+
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('untimeout')
-        .setDescription('Remove timeout from a member')
+
+        .setName("untimeout")
+        .setDescription("Remove a member timeout")
+
+        .setDefaultMemberPermissions(
+            PermissionFlagsBits.ModerateMembers
+        )
+
         .addUserOption(option =>
-            option.setName('target')
-                .setDescription('The member to remove timeout from')
-                .setRequired(true))
+            option
+                .setName("user")
+                .setDescription("User to remove timeout from")
+                .setRequired(true)
+        )
+
         .addStringOption(option =>
-            option.setName('reason')
-                .setDescription('Reason')
-                .setRequired(false))
-        .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
+            option
+                .setName("reason")
+                .setDescription("Reason for removing timeout")
+                .setRequired(false)
+        ),
+
+
 
     async execute(interaction) {
-        const target = interaction.options.getMember('target');
-        const reason = interaction.options.getString('reason') || 'No reason provided';
 
-        if (!target) {
-            return interaction.reply({ content: 'Could not find that member.', ephemeral: true });
+        const user =
+            interaction.options.getUser("user");
+
+
+        const reason =
+            interaction.options.getString("reason")
+            || "No reason provided";
+
+
+
+        const member =
+            await interaction.guild.members.fetch(user.id)
+            .catch(() => null);
+
+
+
+        if (!member) {
+            return interaction.reply({
+                content: "User not found.",
+                ephemeral: true
+            });
         }
 
-        await target.timeout(null, reason);
-        await logAction(interaction.guild, {
-            action: 'Timeout Removed',
-            moderator: interaction.user,
-            target: target.user,
-            reason,
-            color: 0x95A5A6
+
+
+        await member.timeout(
+            null,
+            reason
+        );
+
+
+
+        await interaction.reply({
+            content:
+                `${user.tag} timeout has been removed.`,
+            ephemeral: true
         });
 
-        return interaction.reply(`Removed timeout from ${target.user.tag}. Reason: ${reason}`);
+
+
+        await createLog(interaction.guild, {
+
+            type: "moderation",
+
+            action: "Timeout Removed",
+
+
+            target: user.id,
+
+
+            executor: interaction.user.id,
+
+
+            description:
+                `${user.tag} had their timeout removed.\nReason: ${reason}`,
+
+
+            severity: "normal",
+
+
+            logChannel:
+                channels.moderation.timeout,
+
+
+            metadata: {
+
+                username: user.tag,
+
+                userId: user.id,
+
+                reason
+
+            },
+
+
+            color: 0x57f287,
+
+
+            fields: [
+
+                {
+                    name: "Moderator",
+                    value:
+                        `${interaction.user.tag} (${interaction.user.id})`
+                }
+
+            ]
+
+        });
+
     }
 };
