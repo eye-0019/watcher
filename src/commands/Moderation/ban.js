@@ -29,6 +29,15 @@ module.exports = {
 
         const user = interaction.options.getUser("user");
 
+
+        if (!user) {
+            return interaction.reply({
+                content: "You must select a user to ban.",
+                ephemeral: true
+            });
+        }
+
+
         const reason =
             interaction.options.getString("reason")
             || "No reason provided";
@@ -42,8 +51,7 @@ module.exports = {
 
 
             await interaction.reply({
-                content:
-                    `${user.tag} has been banned.`,
+                content: `${user.tag} has been banned.`,
                 ephemeral: true
             });
 
@@ -58,13 +66,17 @@ module.exports = {
 
                 executor: interaction.user.id,
 
+
                 description:
                     `${user.tag} was banned.\nReason: ${reason}`,
 
+
                 severity: "critical",
+
 
                 logChannel:
                     channels.moderation.ban,
+
 
                 metadata: {
 
@@ -76,7 +88,9 @@ module.exports = {
 
                 },
 
+
                 color: 0xff0000,
+
 
                 fields: [
 
@@ -93,9 +107,10 @@ module.exports = {
 
                 ]
 
-            }).catch(err => {
 
-                console.error("Ban log failed:", err);
+            }).catch(error => {
+
+                console.error("Ban log failed:", error);
 
             });
 
@@ -108,16 +123,14 @@ module.exports = {
             if (interaction.replied || interaction.deferred) {
 
                 await interaction.editReply({
-                    content:
-                        "Failed to ban this user."
+                    content: "Failed to ban this user."
                 }).catch(() => {});
 
 
             } else {
 
                 await interaction.reply({
-                    content:
-                        "Failed to ban this user.",
+                    content: "Failed to ban this user.",
                     ephemeral: true
                 }).catch(() => {});
 
