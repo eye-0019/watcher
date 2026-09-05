@@ -1,24 +1,28 @@
+const { AuditLogEvent } = require("discord.js");
+const { createLog } = require("../logger/logger");
+const channels = require("../logger/channels");
 
-const { AuditLogEvent } = require('discord.js');
-const { createLog } = require('../logger/logger');
-const channels = require('../logger/channels');
 
 module.exports = {
-    name: 'guildBanAdd',
+    name: "guildBanAdd",
 
     async execute(ban) {
+
         let moderator = null;
         let reason = null;
 
+
         try {
-            const auditLogs = await ban.guild.fetchAuditLogs({
+            const logs = await ban.guild.fetchAuditLogs({
                 type: AuditLogEvent.MemberBanAdd,
                 limit: 5
             });
 
-            const entry = auditLogs.entries.find(
+
+            const entry = logs.entries.find(
                 e => e.target.id === ban.user.id
             );
+
 
             if (entry) {
                 moderator = entry.executor;
@@ -27,12 +31,14 @@ module.exports = {
 
         } catch {}
 
-        if (moderator && moderator.bot) return;
 
 
         await createLog(ban.guild, {
+
             type: "moderation",
+
             action: "Member Banned",
+
 
             target: ban.user.id,
 
@@ -40,12 +46,16 @@ module.exports = {
                 ? moderator.id
                 : "Unknown",
 
+
             description:
                 `${ban.user.tag} was banned.\nReason: ${reason || "No reason provided"}`,
 
+
             severity: "high",
 
+
             logChannel: channels.moderation.ban,
+
 
             metadata: {
                 username: ban.user.tag,
@@ -53,7 +63,20 @@ module.exports = {
                 reason: reason || null
             },
 
-            color: 0xff0000
+
+            color: 0xff0000,
+
+
+            fields: [
+                {
+                    name: "Moderator",
+                    value: moderator
+                        ? `${moderator.tag} (${moderator.id})`
+                        : "Unknown"
+                }
+            ]
+
         });
+
     }
 };
