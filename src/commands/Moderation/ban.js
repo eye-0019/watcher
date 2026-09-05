@@ -25,7 +25,6 @@ module.exports = {
         ),
 
 
-
     async execute(interaction) {
 
         const user = interaction.options.getUser("user");
@@ -35,92 +34,88 @@ module.exports = {
             || "No reason provided";
 
 
-
-        const member =
-            await interaction.guild.members.fetch(user.id)
-            .catch(() => null);
-
-
-
-        if (!member) {
-            return interaction.reply({
-                content: "User not found.",
-                ephemeral: true
-            });
-        }
-
-
-
-        await member.ban({
-            reason
-        });
-
-
-
-        await interaction.reply({
-            content:
-                `${user.tag} has been banned.`,
+        await interaction.deferReply({
             ephemeral: true
         });
 
 
+        try {
 
-        createLog(interaction.guild, {
-
-            type: "moderation",
-
-            action: "Member Banned",
-
-            target: user.id,
-
-            executor: interaction.user.id,
-
-
-            description:
-                `${user.tag} was banned.\nReason: ${reason}`,
-
-
-            severity: "critical",
-
-
-            logChannel:
-                channels.moderation.ban,
-
-
-            metadata: {
-
-                username: user.tag,
-
-                userId: user.id,
-
+            await interaction.guild.members.ban(user.id, {
                 reason
-
-            },
-
-
-            color: 0xff0000,
+            });
 
 
-            fields: [
+            await interaction.editReply({
+                content:
+                    `${user.tag} has been banned.`
+            });
 
-                {
-                    name: "Moderator",
-                    value:
-                        `${interaction.user.tag} (${interaction.user.id})`
+
+
+            createLog(interaction.guild, {
+
+                type: "moderation",
+
+                action: "Member Banned",
+
+                target: user.id,
+
+                executor: interaction.user.id,
+
+                description:
+                    `${user.tag} was banned.\nReason: ${reason}`,
+
+                severity: "critical",
+
+                logChannel:
+                    channels.moderation.ban,
+
+                metadata: {
+
+                    username: user.tag,
+
+                    userId: user.id,
+
+                    reason
+
                 },
 
-                {
-                    name: "Reason",
-                    value: reason
-                }
+                color: 0xff0000,
 
-            ]
+                fields: [
 
-        }).catch(err => {
+                    {
+                        name: "Moderator",
+                        value:
+                            `${interaction.user.tag} (${interaction.user.id})`
+                    },
 
-            console.error("Ban log failed:", err);
+                    {
+                        name: "Reason",
+                        value: reason
+                    }
 
-        });
+                ]
+
+            }).catch(err =>
+                console.error("Ban log failed:", err)
+            );
+
+
+        } catch (error) {
+
+            console.error("Ban command failed:", error);
+
+
+            await interaction.editReply({
+
+                content:
+                    "Failed to ban this user."
+
+            });
+
+        }
 
     }
 
