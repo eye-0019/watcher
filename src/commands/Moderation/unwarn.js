@@ -58,7 +58,7 @@ module.exports = {
     });
 
     // ── Log (non-blocking) ────────────────────────────────────────────────────
-    const logChannelId = process.env.MOD_LOG_CHANNEL ?? process.env.BAN_LOG_CHANNEL;
+    const logChannelId = process.env.WARN_LOG_CHANNEL;
     if (logChannelId) {
       (async () => {
         try {
