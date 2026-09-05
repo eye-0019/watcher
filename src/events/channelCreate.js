@@ -1,31 +1,104 @@
-const { EmbedBuilder, AuditLogEvent } = require('discord.js');
+const { AuditLogEvent } = require("discord.js");
+const { createLog } = require("../logger/logger");
+const channels = require("../logger/channels");
+
 
 module.exports = {
-    name: 'channelCreate',
+    name: "channelCreate",
+
     async execute(channel) {
+
         if (!channel.guild) return;
 
-        const logChannelId = process.env.LOG_CHANNEL_ID;
-        const logChannel = channel.guild.channels.cache.get(logChannelId);
-        if (!logChannel) return;
 
-        let moderator = null;
+        let executor = null;
+
+
         try {
-            const auditLogs = await channel.guild.fetchAuditLogs({
+            const logs = await channel.guild.fetchAuditLogs({
                 type: AuditLogEvent.ChannelCreate,
                 limit: 5
             });
-            const entry = auditLogs.entries.find(e => e.target.id === channel.id);
-            if (entry) moderator = entry.executor;
+
+
+            const entry = logs.entries.find(
+                e => e.target.id === channel.id
+            );
+
+
+            if (entry) {
+                executor = entry.executor;
+            }
+
         } catch {}
 
-        const embed = new EmbedBuilder()
-            .setAuthor({ name: 'Channel Created' })
-            .setDescription(`${channel} was created`)
-            .addFields({ name: 'Moderator', value: moderator ? `${moderator} (${moderator.id})` : 'Unknown' })
-            .setFooter({ text: `Channel ID: ${channel.id}` })
-            .setTimestamp();
 
-        logChannel.send({ embeds: [embed] }).catch(() => {});
+
+        await createLog(channel.guild, {
+
+            type: "server",
+
+            action: "Channel Created",
+
+
+            target: channel.id,
+
+
+            executor: executor
+                ? executor.id
+                : null,
+
+
+            channel: channel.id,
+
+
+            description:
+                `Channel **#${channel.name}** was created.`,
+
+
+            severity: "normal",
+
+
+            logChannel: channels.server.channels,
+
+
+            metadata: {
+
+                channelId: channel.id,
+
+                name: channel.name,
+
+                type: channel.type
+
+            },
+
+
+            color: 0x57f287,
+
+
+            fields: [
+
+                {
+                    name: "Channel ID",
+                    value: channel.id
+                },
+
+                {
+                    name: "Type",
+                    value: `${channel.type}`,
+                    inline: true
+                },
+
+                {
+                    name: "Created By",
+                    value: executor
+                        ? `${executor.tag} (${executor.id})`
+                        : "Unknown"
+                }
+
+            ]
+
+        });
+
     }
 };
