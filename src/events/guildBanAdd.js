@@ -13,13 +13,13 @@ module.exports = {
 
 
         try {
-            const logs = await ban.guild.fetchAuditLogs({
+            const auditLogs = await ban.guild.fetchAuditLogs({
                 type: AuditLogEvent.MemberBanAdd,
                 limit: 5
             });
 
 
-            const entry = logs.entries.find(
+            const entry = auditLogs.entries.find(
                 e => e.target.id === ban.user.id
             );
 
@@ -39,28 +39,31 @@ module.exports = {
 
             action: "Member Banned",
 
-
             target: ban.user.id,
 
             executor: moderator
                 ? moderator.id
-                : "Unknown",
+                : null,
 
 
             description:
                 `${ban.user.tag} was banned.\nReason: ${reason || "No reason provided"}`,
 
 
-            severity: "high",
+            severity: "critical",
 
 
             logChannel: channels.moderation.ban,
 
 
             metadata: {
+
                 username: ban.user.tag,
+
                 userId: ban.user.id,
+
                 reason: reason || null
+
             },
 
 
@@ -68,12 +71,14 @@ module.exports = {
 
 
             fields: [
+
                 {
                     name: "Moderator",
                     value: moderator
                         ? `${moderator.tag} (${moderator.id})`
                         : "Unknown"
                 }
+
             ]
 
         });
