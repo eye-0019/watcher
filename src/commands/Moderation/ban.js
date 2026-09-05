@@ -4,6 +4,7 @@ const channels = require("../../logger/channels");
 
 
 module.exports = {
+
     data: new SlashCommandBuilder()
         .setName("ban")
         .setDescription("Ban a member")
@@ -64,15 +65,13 @@ module.exports = {
 
 
 
-        await createLog(interaction.guild, {
+        createLog(interaction.guild, {
 
             type: "moderation",
 
             action: "Member Banned",
 
-
             target: user.id,
-
 
             executor: interaction.user.id,
 
@@ -84,7 +83,8 @@ module.exports = {
             severity: "critical",
 
 
-            logChannel: channels.moderation.ban,
+            logChannel:
+                channels.moderation.ban,
 
 
             metadata: {
@@ -107,11 +107,21 @@ module.exports = {
                     name: "Moderator",
                     value:
                         `${interaction.user.tag} (${interaction.user.id})`
+                },
+
+                {
+                    name: "Reason",
+                    value: reason
                 }
 
             ]
 
+        }).catch(err => {
+
+            console.error("Ban log failed:", err);
+
         });
 
     }
+
 };
