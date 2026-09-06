@@ -55,6 +55,7 @@ module.exports = {
       }
       const executorMember = await guild.members.fetch(executor.id);
       if (
+        executor.id !== guild.ownerId &&
         targetMember.roles.highest.position >=
         executorMember.roles.highest.position
       ) {
