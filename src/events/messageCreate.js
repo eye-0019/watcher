@@ -136,7 +136,7 @@ module.exports = {
 
             const embed =
                 new EmbedBuilder()
-                    .setColor(0xFFFFFF)
+                    .setColor(0x2B2D31)
 
                     .setAuthor({
                         name: message.author.tag,
