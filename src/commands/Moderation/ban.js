@@ -93,7 +93,7 @@ module.exports = {
 
           const embed = new EmbedBuilder()
             .setTitle('Member Banned')
-            .setColor(0xE74C3C)
+            .setColor(0x2B2D31)
             .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
             .addFields(
               { name: 'User',     value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },

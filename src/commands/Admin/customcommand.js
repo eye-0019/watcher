@@ -57,7 +57,7 @@ module.exports = {
         return interaction.editReply({ content: 'No custom commands set up yet.' });
       }
       const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x2B2D31)
         .setTitle('Custom Commands')
         .setDescription(entries.map(([k, v]) => `**${k}** -> ${v}`).join('\n'));
       return interaction.editReply({ embeds: [embed] });

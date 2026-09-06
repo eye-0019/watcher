@@ -102,7 +102,7 @@ module.exports = {
 
           const embed = new EmbedBuilder()
             .setTitle('Member Timed Out')
-            .setColor(0x9B59B6)
+            .setColor(0x2B2D31)
             .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
             .addFields(
               { name: 'User',     value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },

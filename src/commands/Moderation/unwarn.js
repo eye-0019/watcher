@@ -67,7 +67,7 @@ module.exports = {
 
           const embed = new EmbedBuilder()
             .setTitle('Warning Removed')
-            .setColor(0x3498DB)
+            .setColor(0x2B2D31)
             .addFields(
               { name: 'Warning ID', value: String(warnId), inline: true },
               { name: 'User',       value: `<@${deleted.user_id}>`, inline: true },

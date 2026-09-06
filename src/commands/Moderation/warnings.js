@@ -36,7 +36,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setTitle(`Warnings for ${target.tag}`)
-      .setColor(0x95A5A6)
+      .setColor(0x2B2D31)
       .setThumbnail(target.displayAvatarURL({ dynamic: true }))
       .setDescription(
         rows.map((w, i) =>

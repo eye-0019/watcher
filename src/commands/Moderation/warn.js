@@ -79,7 +79,7 @@ module.exports = {
           if (!logChannel?.isTextBased()) return;
           const embed = new EmbedBuilder()
             .setTitle('Member Warned')
-            .setColor(0xF1C40F)
+            .setColor(0x2B2D31)
             .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
             .addFields(
               { name: 'User',           value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },
