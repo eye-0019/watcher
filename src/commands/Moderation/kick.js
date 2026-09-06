@@ -40,7 +40,7 @@ module.exports = {
     }
 
     const executorMember = await guild.members.fetch(executor.id);
-    if (targetMember.roles.highest.position >= executorMember.roles.highest.position) {
+    if (executor.id !== guild.ownerId && targetMember.roles.highest.position >= executorMember.roles.highest.position) {
       return interaction.editReply({
         content: 'You cannot kick someone with a role equal to or higher than yours.',
       });
