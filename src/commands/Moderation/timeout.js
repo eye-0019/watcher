@@ -73,7 +73,7 @@ module.exports = {
     }
 
     const executorMember = await guild.members.fetch(executor.id);
-    if (targetMember.roles.highest.position >= executorMember.roles.highest.position) {
+    if (executor.id !== guild.ownerId && targetMember.roles.highest.position >= executorMember.roles.highest.position) {
       return interaction.editReply({
         content: 'You cannot timeout someone with a role equal to or higher than yours.',
       });
@@ -93,7 +93,7 @@ module.exports = {
     });
 
     // ── Log (non-blocking) ─────────────────────────────────────────────────
-    const logChannelId = process.env.MOD_LOG_CHANNEL ?? process.env.BAN_LOG_CHANNEL;
+    const logChannelId = process.env.TIMEOUT_LOG_CHANNEL;
     if (logChannelId) {
       (async () => {
         try {
