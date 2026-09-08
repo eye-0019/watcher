@@ -18,7 +18,7 @@ module.exports = {
             .setColor(0x000000)
             .setTitle(' sɪʟᴇɴᴛ ᴇʏᴇ')
             .setDescription(
-                `*Our bot likes diging in his butt.*\n` +
+                `*Please Join Our Server!.*\n` +
                 `─────────────────────────────\n\n` +
                 `⌕ semi-toxic. come as you are.\n` +
                 `⌕ show your face. get rated. no filter.\n` +
@@ -29,7 +29,7 @@ module.exports = {
                 `[join silent eye](https://discord.gg/U8hKdArk3a)`
             )
             .setImage('https://i.imgur.com/DJWZ83c.gif')
-            .setFooter({ text: 'sɪʟᴇɴᴛ ᴇʏᴇ · we are always watching' });
+            .setFooter({ text: 'sɪʟᴇɴᴛ ᴇʏᴇ · Our bot digs in his butt' });
 
         await interaction.channel.send({ embeds: [embed] });
         await interaction.reply({ content: 'ad posted!', ephemeral: true });
