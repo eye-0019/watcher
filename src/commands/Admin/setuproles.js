@@ -20,122 +20,138 @@ module.exports = {
         // ── Gender ────────────────────────────────────────────────────────
         const genderEmbed = new EmbedBuilder()
             .setColor(0x000000)
-            .setDescription('**gender**\n pick one');
+            .setDescription(
+                `⌕ **gender**\n` +
+                `─────────────────\n` +
+                `*pick one below*`
+            );
 
         const genderRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('role_male')
-                .setLabel('male')
+                .setLabel('· male ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_female')
-                .setLabel('female')
+                .setLabel('· female ·')
                 .setStyle(ButtonStyle.Secondary),
         );
 
         // ── Age ───────────────────────────────────────────────────────────
         const ageEmbed = new EmbedBuilder()
             .setColor(0x000000)
-            .setDescription('**age**\n pick one');
+            .setDescription(
+                `⌕ **age**\n` +
+                `─────────────────\n` +
+                `*pick one below*`
+            );
 
         const ageRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('role_15')
-                .setLabel('15')
+                .setLabel('· 15 ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_1617')
-                .setLabel('16-17')
+                .setLabel('· 16-17 ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_1819')
-                .setLabel('18-19')
+                .setLabel('· 18-19 ·')
                 .setStyle(ButtonStyle.Secondary),
         );
 
         // ── Color ─────────────────────────────────────────────────────────
         const colorEmbed = new EmbedBuilder()
             .setColor(0x000000)
-            .setDescription('**color**\n pick one');
+            .setDescription(
+                `⌕ **color**\n` +
+                `─────────────────\n` +
+                `*pick one below*`
+            );
 
         const colorRow1 = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('role_owoo')
-                .setLabel('òwó')
+                .setLabel('· òwó ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_ww')
-                .setLabel('•w•')
+                .setLabel('· •w• ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_tww')
-                .setLabel('~w~')
+                .setLabel('· ~w~ ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_owob')
-                .setLabel('ówó')
+                .setLabel('· ówó ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_gwg')
-                .setLabel('>w<')
+                .setLabel('· >w< ·')
                 .setStyle(ButtonStyle.Secondary),
         );
 
         const colorRow2 = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('role_uwu')
-                .setLabel('uwu')
+                .setLabel('· uwu ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_cwc')
-                .setLabel('^w^')
+                .setLabel('· ^w^ ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_owo')
-                .setLabel('OwO')
+                .setLabel('· OwO ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_uwub')
-                .setLabel('ùwú')
+                .setLabel('· ùwú ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_dwm')
-                .setLabel('-w-')
+                .setLabel('· -w- ·')
                 .setStyle(ButtonStyle.Secondary),
         );
 
         // ── Ping ─────────────────────────────────────────────────────────
         const pingEmbed = new EmbedBuilder()
             .setColor(0x000000)
-            .setDescription('**ping**\n pick any');
+            .setDescription(
+                `⌕ **ping**\n` +
+                `─────────────────\n` +
+                `*pick any below*`
+            );
 
         const pingRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('role_announce')
-                .setLabel('announce')
+                .setLabel('· announce ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_partnership')
-                .setLabel('partnership')
+                .setLabel('· partnership ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_deadchat')
-                .setLabel('deadchat')
+                .setLabel('· deadchat ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_vc')
-                .setLabel('vc')
+                .setLabel('· vc ·')
                 .setStyle(ButtonStyle.Secondary),
         );
 
         const pingRow2 = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('role_hallofshame')
-                .setLabel('hall of shame')
+                .setLabel('· hall of shame ·')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('role_halloffame')
-                .setLabel('hall of fame')
+                .setLabel('· hall of fame ·')
                 .setStyle(ButtonStyle.Secondary),
         );
 
