@@ -20,7 +20,7 @@ const welcomeMessages = [
     `<@{id}> is now a member, welcome! 🤤`,
     `glad you made it <@{id}>`,
     `<@{id}> just joined 😼`,
-    `the server just got better, hey <@{id}>`,
+    `I know u a bitch <@{id}>`,
     `welcome <@{id}>, enjoy your stay ❤️`,
     `<@{id}> joined sɪʟᴇɴᴛ ᴇʏᴇ`,
 ];
