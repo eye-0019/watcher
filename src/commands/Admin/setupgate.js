@@ -13,7 +13,7 @@ module.exports = {
                 ` **sɪʟᴇɴᴛ ᴇʏᴇ**\n\n` +
                 `type **we love eyes** to gain access`
             )
-            .setImage('https://i.imgur.com/8oTBdPv.gif')
+            .setImage('https://i.imgur.com/DJWZ83c.gif')
             .setFooter({ text: 'we are always watching' });
 
         await interaction.channel.send({ embeds: [embed] });
