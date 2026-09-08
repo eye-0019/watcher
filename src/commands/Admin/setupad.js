@@ -25,7 +25,7 @@ module.exports = {
                 `⌕ hangout, make friends, cause problems.\n` +
                 `⌕ powered by our own custom AI bot.\n\n` +
                 `─────────────────────────────\n` +
-                `> **${memberCount}** members and watching\n\n` +
+                `> **${memberCount}** members right now\n\n` +
                 `[join silent eye](https://discord.gg/U8hKdArk3a)`
             )
             .setImage('https://i.imgur.com/DJWZ83c.gif')
