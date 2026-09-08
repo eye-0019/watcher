@@ -38,7 +38,7 @@ module.exports = {
                 `─────────────────────────────\n` +
                 `*warnings → timeouts → ban. simple.*`
             )
-            .setFooter({ text: 'sɪʟᴇɴᴛ ᴇʏᴇ · btw if u didnt know Watcher likes diggin his butt' });
+            .setFooter({ text: 'sɪʟᴇɴᴛ ᴇʏᴇ · btw if u didnt know Watcher likes diggin in his butt' });
 
         await channel.send({ embeds: [embed] });
         await interaction.reply({ content: 'rules posted!', ephemeral: true });
