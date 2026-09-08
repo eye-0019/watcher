@@ -30,7 +30,7 @@ module.exports = {
     async execute(member) {
 
         // ── Auto role ─────────────────────────────────────────────────────
-        const autoRoleId = process.env.MEMBER_ROLE_ID;
+        const autoRoleId = process.env.AUTO_ROLE_ID;
         if (autoRoleId) {
             try {
                 await member.roles.add(autoRoleId);
@@ -59,7 +59,7 @@ module.exports = {
                         .addFields(
                             {
                                 name: 'get started',
-                                value: `📜 read <#RULES_CHANNEL_ID>\n🎭 get your <#ROLES_CHANNEL_ID>\n🌿 join daily <#GW_CHANNEL_ID>`,
+                                value: `📜 read <#1541587463028605060>\n🎭 get your <#1543126010394972232>`,
                             },
                             {
                                 name: 'member count',
