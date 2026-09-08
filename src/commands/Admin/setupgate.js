@@ -10,8 +10,9 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor(0x000000)
             .setDescription(
-                ` **sɪʟᴇɴᴛ ᴇʏᴇ**\n\n` +
-                `type **we love eyes** to gain access`
+                `👁️ **sɪʟᴇɴᴛ ᴇʏᴇ**\n\n` +
+                `type **we love eyes** to gain access\n\n` +
+                `📜 <#1541587463028605060> · 🎭 <#1543126010394972232>`
             )
             .setImage('https://i.imgur.com/DJWZ83c.gif')
             .setFooter({ text: 'we are always watching' });
