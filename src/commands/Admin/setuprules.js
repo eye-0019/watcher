@@ -16,9 +16,8 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(0x000000)
-            .setTitle('👁️ sɪʟᴇɴᴛ ᴇʏᴇ · rules')
+            .setTitle(' sɪʟᴇɴᴛ ᴇʏᴇ · rules')
             .setDescription(
-                `*follow these or get the boot 🥾*\n` +
                 `─────────────────────────────\n\n` +
                 `⌕ **don't be a loser**\n` +
                 `> jokes and arguing are fine. harassing, bullying, or targeting someone isn't.\n\n` +
@@ -39,7 +38,7 @@ module.exports = {
                 `─────────────────────────────\n` +
                 `*warnings → timeouts → ban. simple.*`
             )
-            .setFooter({ text: 'sɪʟᴇɴᴛ ᴇʏᴇ · we are always watching' });
+            .setFooter({ text: 'sɪʟᴇɴᴛ ᴇʏᴇ · btw if u didnt know Watcher likes diggin his butt' });
 
         await channel.send({ embeds: [embed] });
         await interaction.reply({ content: 'rules posted!', ephemeral: true });
