@@ -103,8 +103,6 @@ module.exports = {
                     if (member) {
                         await member.roles.add(process.env.AUTO_ROLE_ID);
                         await message.delete().catch(() => {});
-                        const confirm = await message.channel.send(`we love eyes 🤤🤤 welcome <@${message.author.id}>`);
-                        setTimeout(() => confirm.delete().catch(() => {}), 4000);
                     }
                 } catch (err) {
                     console.error('[gate] failed to verify member:', err);
