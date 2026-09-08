@@ -29,16 +29,7 @@ module.exports = {
     name: "guildMemberAdd",
     async execute(member) {
 
-        // ── Auto role ─────────────────────────────────────────────────────
-        const autoRoleId = process.env.AUTO_ROLE_ID;
-        if (autoRoleId) {
-            try {
-                await member.roles.add(autoRoleId);
-            } catch (err) {
-                console.error('[guildMemberAdd] Failed to assign auto role:', err);
-            }
-        }
-
+        
         // ── Welcome embed ─────────────────────────────────────────────────
         const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
         if (welcomeChannelId) {
