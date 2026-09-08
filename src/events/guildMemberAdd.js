@@ -1,5 +1,6 @@
 const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
+const { EmbedBuilder } = require("discord.js");
 
 const welcomeMessages = [
     `welcome <@{id}> 👀`,
@@ -28,8 +29,8 @@ module.exports = {
     name: "guildMemberAdd",
     async execute(member) {
 
-        // ── Auto role ────────────────────────────────────────────────────────
-        const autoRoleId = process.env.AUTO_ROLE_ID;
+        // ── Auto role ─────────────────────────────────────────────────────
+        const autoRoleId = process.env.MEMBER_ROLE_ID;
         if (autoRoleId) {
             try {
                 await member.roles.add(autoRoleId);
@@ -38,7 +39,7 @@ module.exports = {
             }
         }
 
-        // ── Welcome message ──────────────────────────────────────────────────
+        // ── Welcome embed ─────────────────────────────────────────────────
         const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
         if (welcomeChannelId) {
             try {
@@ -46,14 +47,42 @@ module.exports = {
                 if (welcomeChannel?.isTextBased()) {
                     const random = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
                     const message = random.replace(/{id}/g, member.id);
-                    await welcomeChannel.send(message);
+
+                    const embed = new EmbedBuilder()
+                        .setColor(0x000000)
+                        .setAuthor({
+                            name: member.user.username,
+                            iconURL: member.user.displayAvatarURL({ dynamic: true })
+                        })
+                        .setDescription(message)
+                        .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+                        .addFields(
+                            {
+                                name: 'get started',
+                                value: `📜 read <#RULES_CHANNEL_ID>\n🎭 get your <#ROLES_CHANNEL_ID>\n🌿 join daily <#GW_CHANNEL_ID>`,
+                            },
+                            {
+                                name: 'member count',
+                                value: `\`${member.guild.memberCount}\``,
+                                inline: true
+                            },
+                            {
+                                name: 'account age',
+                                value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
+                                inline: true
+                            }
+                        )
+                        .setFooter({ text: 'sɪʟᴇɴᴛ ᴇʏᴇ' })
+                        .setTimestamp();
+
+                    await welcomeChannel.send({ embeds: [embed] });
                 }
             } catch (err) {
                 console.error('[guildMemberAdd] Failed to send welcome message:', err);
             }
         }
 
-        // ── Log ──────────────────────────────────────────────────────────────
+        // ── Log ───────────────────────────────────────────────────────────
         await createLog(member.guild, {
             type: "member",
             action: "Member Joined",
