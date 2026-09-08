@@ -1,3 +1,4 @@
+
 const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
 const { EmbedBuilder } = require("discord.js");
@@ -76,6 +77,9 @@ module.exports = {
                         .setTimestamp();
 
                     await welcomeChannel.send({ embeds: [embed] });
+
+                    const ping = await welcomeChannel.send(`<@${member.id}>`);
+                    setTimeout(() => ping.delete().catch(() => {}), 3000);
                 }
             } catch (err) {
                 console.error('[guildMemberAdd] Failed to send welcome message:', err);
