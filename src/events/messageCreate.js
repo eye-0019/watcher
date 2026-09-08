@@ -28,40 +28,30 @@ const EXEMPT_USER_IDS = new Set([
         .filter(Boolean)
 ]);
 
+const GATE_CHANNEL_ID = '1546679050716717096';
+const GATE_PHRASE = 'we love eyes';
+
 async function getOrCreateTicketChannel(client, user) {
-    const guildId =
-        process.env.GUILD_ID;
+    const guildId = process.env.GUILD_ID;
+    const guild = client.guilds.cache.get(guildId);
 
-    const guild =
-        client.guilds.cache.get(guildId);
+    if (!guild) return null;
 
-    if (!guild) {
-        return null;
-    }
-
-    const existingId =
-        await getChannelForUser(user.id);
+    const existingId = await getChannelForUser(user.id);
 
     if (existingId) {
-        const existing =
-            guild.channels.cache.get(existingId);
-
-        if (existing) {
-            return existing;
-        }
+        const existing = guild.channels.cache.get(existingId);
+        if (existing) return existing;
     }
 
     const overwrites = [
         {
             id: guild.roles.everyone.id,
-            deny: [
-                PermissionFlagsBits.ViewChannel
-            ]
+            deny: [PermissionFlagsBits.ViewChannel]
         }
     ];
 
-    const staffRoleId =
-        process.env.STAFF_ROLE_ID;
+    const staffRoleId = process.env.STAFF_ROLE_ID;
 
     if (staffRoleId) {
         overwrites.push({
@@ -73,37 +63,23 @@ async function getOrCreateTicketChannel(client, user) {
         });
     }
 
-    const channel =
-        await guild.channels.create({
-            name:
-                `dm-${user.username}`
-                    .toLowerCase()
-                    .replace(/[^a-z0-9-]/g, '')
-                    .slice(0, 90) ||
-                `dm-${user.id}`,
-
-            type: ChannelType.GuildText,
-
-            parent:
-                process.env.MODMAIL_CATEGORY_ID ||
-                undefined,
-
-            permissionOverwrites:
-                overwrites
-        }).catch(error => {
-            console.error(
-                '❌ Failed to create DM ticket channel:',
-                error
-            );
-
-            return null;
-        });
+    const channel = await guild.channels.create({
+        name:
+            `dm-${user.username}`
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, '')
+                .slice(0, 90) ||
+            `dm-${user.id}`,
+        type: ChannelType.GuildText,
+        parent: process.env.MODMAIL_CATEGORY_ID || undefined,
+        permissionOverwrites: overwrites
+    }).catch(error => {
+        console.error('❌ Failed to create DM ticket channel:', error);
+        return null;
+    });
 
     if (channel) {
-        await setTicket(
-            user.id,
-            channel.id
-        );
+        await setTicket(user.id, channel.id);
     }
 
     return channel;
@@ -114,7 +90,28 @@ module.exports = {
 
     async execute(message, client) {
 
-        if (message.author.bot) {
+        if (message.author.bot) return;
+
+        // ========================================================
+        // Gate / verify
+        // ========================================================
+
+        if (message.channel.id === GATE_CHANNEL_ID) {
+            if (message.content.toLowerCase().trim() === GATE_PHRASE) {
+                try {
+                    const member = await message.guild.members.fetch(message.author.id).catch(() => null);
+                    if (member) {
+                        await member.roles.add(process.env.AUTO_ROLE_ID);
+                        await message.delete().catch(() => {});
+                        const confirm = await message.channel.send(`we love eyes 🤤🤤 welcome <@${message.author.id}>`);
+                        setTimeout(() => confirm.delete().catch(() => {}), 4000);
+                    }
+                } catch (err) {
+                    console.error('[gate] failed to verify member:', err);
+                }
+            } else {
+                await message.delete().catch(() => {});
+            }
             return;
         }
 
@@ -123,48 +120,22 @@ module.exports = {
         // ========================================================
 
         if (!message.guild) {
+            const channel = await getOrCreateTicketChannel(client, message.author);
+            if (!channel) return;
 
-            const channel =
-                await getOrCreateTicketChannel(
-                    client,
-                    message.author
-                );
+            const embed = new EmbedBuilder()
+                .setColor(0x2B2D31)
+                .setAuthor({
+                    name: message.author.tag,
+                    iconURL: message.author.displayAvatarURL()
+                })
+                .setDescription(message.content?.slice(0, 1900) || '*No content*')
+                .setFooter({ text: 'Reply in this channel to message them back' })
+                .setTimestamp();
 
-            if (!channel) {
-                return;
-            }
-
-            const embed =
-                new EmbedBuilder()
-                    .setColor(0x2B2D31)
-
-                    .setAuthor({
-                        name: message.author.tag,
-                        iconURL:
-                            message.author
-                                .displayAvatarURL()
-                    })
-
-                    .setDescription(
-                        message.content?.slice(0, 1900) ||
-                        '*No content*'
-                    )
-
-                    .setFooter({
-                        text:
-                            'Reply in this channel to message them back'
-                    })
-
-                    .setTimestamp();
-
-            await channel
-                .send({ embeds: [embed] })
-                .catch(error => {
-                    console.error(
-                        '❌ Failed to forward DM:',
-                        error
-                    );
-                });
+            await channel.send({ embeds: [embed] }).catch(error => {
+                console.error('❌ Failed to forward DM:', error);
+            });
 
             return;
         }
@@ -173,24 +144,13 @@ module.exports = {
         // Staff replying to an open DM ticket
         // ========================================================
 
-        const ticketUserId =
-            await getUserForChannel(
-                message.channel.id
-            );
+        const ticketUserId = await getUserForChannel(message.channel.id);
 
         if (ticketUserId) {
-
-            const user =
-                await client.users
-                    .fetch(ticketUserId)
-                    .catch(() => null);
-
+            const user = await client.users.fetch(ticketUserId).catch(() => null);
             if (user && message.content) {
-                user
-                    .send(message.content)
-                    .catch(() => {});
+                user.send(message.content).catch(() => {});
             }
-
             return;
         }
 
@@ -198,85 +158,36 @@ module.exports = {
         // AI CHAT
         // ========================================================
 
-        const aiChannelId =
-            process.env.AI_CHANNEL_ID;
-
-        const watcherMentioned =
-            message.mentions.has(client.user);
+        const aiChannelId = process.env.AI_CHANNEL_ID;
+        const watcherMentioned = message.mentions.has(client.user);
 
         if (
             (aiChannelId && message.channel.id === aiChannelId) ||
             watcherMentioned
         ) {
+            const watcherMention = new RegExp(`<@!?${client.user.id}>`, 'g');
+            const userMessage = message.content.replace(watcherMention, '').trim();
 
-            // Remove ONLY Watcher's actual mention.
-            // Everything else in the user's message stays.
-            const watcherMention =
-                new RegExp(
-                    `<@!?${client.user.id}>`,
-                    'g'
-                );
-
-            const userMessage =
-                message.content
-                    .replace(
-                        watcherMention,
-                        ''
-                    )
-                    .trim();
-
-            console.log(
-                `🤖 AI message from ${message.author.username}: "${userMessage}"`
-            );
+            console.log(`🤖 AI message from ${message.author.username}: "${userMessage}"`);
 
             if (!userMessage) {
-
-                await message
-                    .reply(
-                        'yo 😭 you gotta actually say something'
-                    )
-                    .catch(() => {});
-
+                await message.reply('yo 😭 you gotta actually say something').catch(() => {});
                 return;
             }
 
             try {
-
-                await message.channel
-                    .sendTyping();
-
-                const reply =
-                    await getAiReply(
-                        message,
-                        userMessage,
-                        client
-                    );
+                await message.channel.sendTyping();
+                const reply = await getAiReply(message, userMessage, client);
 
                 if (!reply) {
-
-                    await message
-                        .reply(
-                            'uhh my brain is not working rn 😭 check the bot logs'
-                        )
-                        .catch(() => {});
-
+                    await message.reply('uhh my brain is not working rn 😭 check the bot logs').catch(() => {});
                     return;
                 }
 
                 await message.reply(reply);
-
             } catch (error) {
-
-                console.error(
-                    '❌ AI message handling failed:',
-                    error
-                );
-
-                await message
-                    .reply(
-                        'something broke on my end 😭'
-                    )
-                    .catch(() => {});
+                console.error('❌ AI message handling failed:', error);
+                await message.reply('something broke on my end 😭').catch(() => {});
             }
 
             return;
@@ -286,16 +197,8 @@ module.exports = {
         // Scam/phishing links
         // ========================================================
 
-        if (
-            isScamLink(
-                message.content
-            )
-        ) {
-
-            await message
-                .delete()
-                .catch(() => {});
-
+        if (isScamLink(message.content)) {
+            await message.delete().catch(() => {});
             return;
         }
 
@@ -303,35 +206,17 @@ module.exports = {
         // Pics-only channel
         // ========================================================
 
-        const picsChannelId =
-            process.env.PICS_CHANNEL_ID;
+        const picsChannelId = process.env.PICS_CHANNEL_ID;
 
-        if (
-            picsChannelId &&
-            message.channel.id === picsChannelId
-        ) {
-
-            const hasImage =
-                message.attachments.some(
-                    attachment =>
-                        attachment.contentType
-                            ?.startsWith('image/')
-                );
+        if (picsChannelId && message.channel.id === picsChannelId) {
+            const hasImage = message.attachments.some(
+                attachment => attachment.contentType?.startsWith('image/')
+            );
 
             if (!hasImage) {
-
-                await message
-                    .delete()
-                    .catch(() => {});
-
+                await message.delete().catch(() => {});
             } else {
-
-                message
-                    .react('⬆️')
-                    .then(() =>
-                        message.react('⬇️')
-                    )
-                    .catch(() => {});
+                message.react('⬆️').then(() => message.react('⬇️')).catch(() => {});
             }
 
             return;
@@ -341,56 +226,24 @@ module.exports = {
         // Anti-spam
         // ========================================================
 
-        const isExempt =
-            EXEMPT_USER_IDS.has(
-                message.author.id
-            );
+        const isExempt = EXEMPT_USER_IDS.has(message.author.id);
 
         if (!isExempt) {
-
-            const spamResult =
-                trackMessage(
-                    message.guild.id,
-                    message.author.id
-                );
+            const spamResult = trackMessage(message.guild.id, message.author.id);
 
             if (spamResult) {
+                await message.delete().catch(() => {});
 
-                await message
-                    .delete()
-                    .catch(() => {});
-
-                const member =
-                    await message.guild.members
-                        .fetch(message.author.id)
-                        .catch(() => null);
+                const member = await message.guild.members.fetch(message.author.id).catch(() => null);
 
                 if (member?.moderatable) {
-
-                    await member
-                        .timeout(
-                            TIMEOUT_MS,
-                            'Auto anti-spam'
-                        )
-                        .catch(error => {
-                            console.error(
-                                '❌ Failed to timeout spammer:',
-                                error
-                            );
-                        });
+                    await member.timeout(TIMEOUT_MS, 'Auto anti-spam').catch(error => {
+                        console.error('❌ Failed to timeout spammer:', error);
+                    });
                 }
 
-                await message.channel
-                    .send(
-                        `${message.author} bro chill 😭`
-                    )
-                    .catch(() => {});
-
-                await message.author
-                    .send(
-                        'yo 😭 you were sending messages too fast, so Watcher hit you with a short timeout. chill for a sec.'
-                    )
-                    .catch(() => {});
+                await message.channel.send(`${message.author} bro chill 😭`).catch(() => {});
+                await message.author.send('yo 😭 you were sending messages too fast, so Watcher hit you with a short timeout. chill for a sec.').catch(() => {});
 
                 return;
             }
@@ -401,29 +254,12 @@ module.exports = {
         // ========================================================
 
         try {
-
-            const xpResult =
-                await addMessageXp(
-                    message.author.id
-                );
-
-            if (
-                xpResult?.leveledUp
-            ) {
-
-                await message.channel
-                    .send(
-                        `${message.author} just reached **Level ${xpResult.newLevel}**! 🎉`
-                    )
-                    .catch(() => {});
+            const xpResult = await addMessageXp(message.author.id);
+            if (xpResult?.leveledUp) {
+                await message.channel.send(`${message.author} just reached **Level ${xpResult.newLevel}**! 🎉`).catch(() => {});
             }
-
         } catch (error) {
-
-            console.error(
-                '❌ Failed to add message XP:',
-                error
-            );
+            console.error('❌ Failed to add message XP:', error);
         }
 
         // ========================================================
@@ -431,26 +267,12 @@ module.exports = {
         // ========================================================
 
         try {
-
-            const response =
-                await getResponse(
-                    message.content
-                        .trim()
-                        .split(/\s+/)[0]
-                );
-
+            const response = await getResponse(message.content.trim().split(/\s+/)[0]);
             if (response) {
-
-                await message.channel
-                    .send(response);
+                await message.channel.send(response);
             }
-
         } catch (error) {
-
-            console.error(
-                '❌ Failed to process custom command:',
-                error
-            );
+            console.error('❌ Failed to process custom command:', error);
         }
     }
 };
