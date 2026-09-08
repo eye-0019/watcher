@@ -10,7 +10,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor(0x000000)
             .setDescription(
-                `👁️ **sɪʟᴇɴᴛ ᴇʏᴇ**\n\n` +
+                ` **sɪʟᴇɴᴛ ᴇʏᴇ**\n\n` +
                 `type **we love eyes** to gain access`
             )
             .setImage('https://i.imgur.com/8oTBdPv.gif')
