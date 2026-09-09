@@ -62,13 +62,17 @@ module.exports = {
         );
 
         // ── Color ─────────────────────────────────────────────────────────
-        const colorEmbed = new EmbedBuilder()
-            .setColor(0x000000)
-            .setDescription(
-                `⌕ **color**\n` +
-                `─────────────────\n` +
-                `*pick one below*`
-            );
+const colorEmbed = new EmbedBuilder()
+    .setColor(0x000000)
+    .setDescription(
+        `⌕ **color**\n` +
+        `─────────────────\n` +
+        `<@&ROLE_ID> · òwó ·　　　　<@&ROLE_ID> · •w• ·\n` +
+        `<@&ROLE_ID> · ~w~ ·　　　　<@&ROLE_ID> · ówó ·\n` +
+        `<@&ROLE_ID> · >w< ·　　　　<@&ROLE_ID> · uwu ·\n` +
+        `<@&ROLE_ID> · ^w^ ·　　　　<@&ROLE_ID> · OwO ·\n` +
+        `<@&ROLE_ID> · ùwú ·　　　　<@&ROLE_ID> · -w- ·`
+    );
 
         const colorRow1 = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
