@@ -160,16 +160,18 @@ module.exports = {
         const watcherMentioned = message.mentions.has(client.user);
 
         if (
-            (aiChannelId && message.channel.id === aiChannelId) ||
-            watcherMentioned
-        ) {
+    aiChannelId && (
+        message.channel.id === aiChannelId ||
+        (watcherMentioned && message.channel.id === aiChannelId)
+    )
+) {
             const watcherMention = new RegExp(`<@!?${client.user.id}>`, 'g');
             const userMessage = message.content.replace(watcherMention, '').trim();
 
             console.log(`🤖 AI message from ${message.author.username}: "${userMessage}"`);
 
             if (!userMessage) {
-                await message.reply('yo 😭 you gotta actually say something').catch(() => {});
+                await message.reply('say something dude').catch(() => {});
                 return;
             }
 
