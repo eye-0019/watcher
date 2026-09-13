@@ -1,4 +1,4 @@
-+const { pool } = require('./db');
+const { pool } = require('./db');
 
 const HISTORY_LIMIT = 10;
 const NOTES_UPDATE_EVERY = 1;
