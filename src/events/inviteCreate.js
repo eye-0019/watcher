@@ -8,10 +8,16 @@ module.exports = {
 
     async execute(invite) {
 
+        console.log(
+            `[INVITE CREATE] ${invite.code} created in ${invite.guild.name}`
+        );
+
+
         let executor = null;
 
 
         try {
+
             const logs = await invite.guild.fetchAuditLogs({
                 type: AuditLogEvent.InviteCreate,
                 limit: 5
@@ -19,8 +25,7 @@ module.exports = {
 
 
             const entry = logs.entries.find(
-                e =>
-                    e.target?.code === invite.code
+                e => e.target?.code === invite.code
             );
 
 
@@ -28,7 +33,15 @@ module.exports = {
                 executor = entry.executor;
             }
 
-        } catch {}
+
+        } catch (err) {
+
+            console.error(
+                "[inviteCreate] Audit log error:",
+                err.message
+            );
+
+        }
 
 
 
@@ -38,6 +51,7 @@ module.exports = {
 
             action: "Invite Created",
 
+            target: null,
 
             executor: executor
                 ? executor.id
@@ -50,25 +64,35 @@ module.exports = {
 
 
             description:
-                `Invite **${invite.code}** was created.`,
+                `Invite \`${invite.code}\` was created.`,
 
 
             severity: "normal",
 
 
-            logChannel: channels.server.invites,
+            logChannel:
+                channels.invites?.create,
 
 
             metadata: {
 
                 code: invite.code,
 
-                maxUses: invite.maxUses,
+                inviter:
+                    invite.inviter
+                    ? invite.inviter.id
+                    : null,
+
+                maxUses:
+                    invite.maxUses,
+
+                temporary:
+                    invite.temporary,
 
                 expires:
                     invite.expiresAt
-                        ? invite.expiresAt.toISOString()
-                        : null
+                    ? invite.expiresAt.toISOString()
+                    : null
 
             },
 
@@ -80,19 +104,39 @@ module.exports = {
 
                 {
                     name: "Created By",
-                    value: executor
+
+                    value:
+                        executor
                         ? `${executor.tag} (${executor.id})`
                         : "Unknown"
                 },
 
+
+                {
+                    name: "Invite Code",
+
+                    value:
+                        `\`${invite.code}\``
+                },
+
+
                 {
                     name: "Channel",
-                    value: invite.channel
+
+                    value:
+                        invite.channel
                         ? `<#${invite.channel.id}>`
                         : "Unknown"
                 }
 
             ]
+
+        }).catch(err => {
+
+            console.error(
+                "[inviteCreate] Logging failed:",
+                err
+            );
 
         });
 
