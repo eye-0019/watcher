@@ -203,7 +203,7 @@ module.exports = {
                     const embed =
                         new EmbedBuilder()
 
-                        .setColor(0x808080)
+                        .setColor(0x3B3B41)
 
                         .setTitle("👋 New Member")
 
