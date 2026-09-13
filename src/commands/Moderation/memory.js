@@ -29,14 +29,29 @@ module.exports = {
         }
 
         const embed = new EmbedBuilder()
-            .setTitle("🧠 Watcher Memory")
-            .setDescription(
-                `**User:** ${user.username}\n` +
-                `**ID:** ${user.id}\n\n` +
-                `**Notes:**\n${memory.notes || "No notes saved."}\n\n` +
-                `**Conversations remembered:** ${memory.exchange_count}`
-            )
-            .setTimestamp();
+    .setTitle("🧠 Watcher Memory")
+    .setDescription(
+        `**User:** ${user.username}\n` +
+        `**ID:** ${user.id}\n\n` +
+
+        `**📝 Notes:**\n` +
+        `${memory.notes || "No notes saved."}\n\n` +
+
+        `**👤 Profile:**\n` +
+        `${JSON.stringify(memory.profile || {}, null, 2)}\n\n` +
+
+        `**🎭 Personality:**\n` +
+        `${JSON.stringify(memory.personality || {}, null, 2)}\n\n` +
+
+        `**🚀 Projects:**\n` +
+        `${JSON.stringify(memory.projects || {}, null, 2)}\n\n` +
+
+        `**⭐ Importance:**\n` +
+        `${memory.importance || 0}\n\n` +
+
+        `**💬 Conversations remembered:** ${memory.exchange_count}`
+    )
+    .setTimestamp();
 
         await interaction.reply({
             embeds: [embed]
