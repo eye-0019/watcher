@@ -27,6 +27,8 @@ async function sendOwnerError(
     details = {}
 ) {
 
+    console.log("🚨 sendOwnerError called");
+
     lastError = {
         message:
             error?.message || String(error),
@@ -44,12 +46,15 @@ async function sendOwnerError(
 
     try {
 
-        if (
-            !client ||
-            !AI_ERROR_CHANNEL_ID
-        ) {
-            return;
-        }
+        if (!client) {
+    console.error("❌ No Discord client");
+    return;
+}
+
+if (!AI_ERROR_CHANNEL_ID) {
+    console.error("❌ AI_ERROR_CHANNEL_ID missing");
+    return;
+}
 
 
 

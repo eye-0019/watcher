@@ -17,7 +17,7 @@ const {
 const { isScamLink } =
     require('../utils/scamLinkFilter');
 
-const { getAiReply } =
+const { getAiReply, saveConversation } =
     require('../utils/aiChat');
 
 const EXEMPT_USER_IDS = new Set([
@@ -153,45 +153,56 @@ module.exports = {
         }
 
         // ========================================================
-        // AI CHAT
-        // ========================================================
+// AI CHAT
+// ========================================================
 
-        const aiChannelId = process.env.AI_CHANNEL_ID;
-        const watcherMentioned = message.mentions.has(client.user);
+const aiChannelId = process.env.AI_CHANNEL_ID;
+const watcherMentioned = message.mentions.has(client.user);
 
-        if (
-    aiChannelId && (
-        message.channel.id === aiChannelId ||
-        (watcherMentioned && message.channel.id === aiChannelId)
-    )
+if (
+    aiChannelId &&
+    message.channel.id === aiChannelId &&
+    (message.channel.id === aiChannelId || watcherMentioned)
 ) {
-            const watcherMention = new RegExp(`<@!?${client.user.id}>`, 'g');
-            const userMessage = message.content.replace(watcherMention, '').trim();
+    const watcherMention = new RegExp(`<@!?${client.user.id}>`, 'g');
+    const userMessage = message.content.replace(watcherMention, '').trim();
 
-            console.log(`🤖 AI message from ${message.author.username}: "${userMessage}"`);
+    console.log(`🤖 AI message from ${message.author.username}: "${userMessage}"`);
 
-            if (!userMessage) {
-                await message.reply('say something dude').catch(() => {});
-                return;
-            }
+    if (!userMessage) {
+        await message.reply('say something dude').catch(() => {});
+        return;
+    }
 
-            try {
-                await message.channel.sendTyping();
-                const reply = await getAiReply(message, userMessage, client);
+    try {
+        await message.channel.sendTyping();
 
-                if (!reply) {
-                    await message.reply('uhh my brain is not working rn 😭 check the bot logs').catch(() => {});
-                    return;
-                }
+        const reply = await getAiReply(message, userMessage, client);
 
-                await message.reply(reply);
-            } catch (error) {
-                console.error('❌ AI message handling failed:', error);
-                await message.reply('something broke on my end 😭').catch(() => {});
-            }
-
+        if (!reply) {
+            await message.reply('uhh my brain is not working rn 😭 check the bot logs').catch(() => {});
             return;
         }
+
+        await message.reply(reply);
+
+        try {
+            await saveConversation(
+                message.author.id,
+                userMessage,
+                reply
+            );
+        } catch (error) {
+            console.error('❌ Failed to save AI memory:', error);
+        }
+
+    } catch (error) {
+        console.error('❌ AI message handling failed:', error);
+        await message.reply('something broke on my end 😭').catch(() => {});
+    }
+
+    return;
+}
 
         // ========================================================
         // Scam/phishing links
