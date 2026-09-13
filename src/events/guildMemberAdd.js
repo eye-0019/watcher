@@ -15,13 +15,12 @@ const {
 
 
 const welcomeMessages = [
-    `welcome <@{id}> 👀`,
+    `welcome to sɪʟᴇɴᴛ ᴇʏᴇ <@{id}> 😼`,
     `<@{id}> just joined, hey!`,
     `we got a new one, welcome <@{id}> 🗣️`,
     `<@{id}> pulled up, welcome in`,
     `hey <@{id}>, glad you're here ❤️`,
     `<@{id}> just joined the server`,
-    `welcome to sɪʟᴇɴᴛ ᴇʏᴇ <@{id}> 😼`,
 ];
 
 
@@ -63,6 +62,7 @@ module.exports = {
 
             if (usedInvite?.inviter) {
 
+
                 const inviter =
                     usedInvite.inviter;
 
@@ -88,6 +88,7 @@ module.exports = {
                     );
 
 
+
                 console.log(
                     `[INVITE REWARD] ${inviter.tag} now has ${count} invites`
                 );
@@ -96,6 +97,7 @@ module.exports = {
 
                 const gifRole =
                     process.env.GIF_ROLE_ID;
+
 
                 const picRole =
                     process.env.PIC_ROLE_ID;
@@ -115,12 +117,12 @@ module.exports = {
                     if (count >= 1 && gifRole) {
 
                         await inviterMember.roles.add(gifRole)
-                        .then(() =>
-                            console.log(
-                                `[ROLE] Added GIF role to ${inviter.tag}`
+                        .catch(err =>
+                            console.error(
+                                "[GIF ROLE ERROR]",
+                                err
                             )
-                        )
-                        .catch(console.error);
+                        );
 
                     }
 
@@ -129,21 +131,24 @@ module.exports = {
                     if (count >= 2 && picRole) {
 
                         await inviterMember.roles.add(picRole)
-                        .then(() =>
-                            console.log(
-                                `[ROLE] Added PIC role to ${inviter.tag}`
+                        .catch(err =>
+                            console.error(
+                                "[PIC ROLE ERROR]",
+                                err
                             )
-                        )
-                        .catch(console.error);
+                        );
 
                     }
 
                 }
 
+
             }
 
 
+
             await cacheGuildInvites(member.guild);
+
 
 
         } catch (err) {
@@ -157,8 +162,9 @@ module.exports = {
 
 
 
+
         // =====================================================
-        // Welcome embed
+        // Welcome Embed
         // =====================================================
 
 
@@ -168,6 +174,7 @@ module.exports = {
 
 
         if (welcomeChannelId) {
+
 
             try {
 
@@ -182,18 +189,15 @@ module.exports = {
                 if (welcomeChannel?.isTextBased()) {
 
 
-                    const random =
+
+                    const text =
                         welcomeMessages[
                             Math.floor(
                                 Math.random() *
                                 welcomeMessages.length
                             )
-                        ];
-
-
-
-                    const message =
-                        random.replace(
+                        ]
+                        .replace(
                             /{id}/g,
                             member.id
                         );
@@ -203,37 +207,83 @@ module.exports = {
                     const embed =
                         new EmbedBuilder()
 
+
                         .setColor(0x3B3B41)
 
-                        .setTitle("👋 New Member")
 
-                        .setDescription(message)
+                        .setAuthor({
+
+                            name:
+                                member.user.username,
+
+                            iconURL:
+                                member.user.displayAvatarURL()
+
+                        })
+
+
+                        .setDescription(
+                            text
+                        )
+
+
+                        .setThumbnail(
+
+                            member.user.displayAvatarURL({
+
+                                size: 256
+
+                            })
+
+                        )
+
 
                         .addFields(
 
                             {
+
                                 name: "User",
+
                                 value:
-                                `${member.user.tag}\n<@${member.id}>`
+                                    `${member.user.tag}\n<@${member.id}>`
+
                             },
 
+
                             {
+
                                 name: "Account Created",
+
                                 value:
-                                `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`
+                                    `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
+
+                                inline: true
+
                             },
 
+
                             {
+
                                 name: "Member Count",
+
                                 value:
-                                `${member.guild.memberCount}`
+                                    `${member.guild.memberCount}`,
+
+                                inline: true
+
                             }
 
                         )
 
-                        .setThumbnail(
-                            member.user.displayAvatarURL()
-                        )
+
+                        .setFooter({
+
+                            text:
+                                "SILENT EYE • Welcome"
+
+                        })
+
+
 
                         .setTimestamp();
 
@@ -249,14 +299,18 @@ module.exports = {
                 }
 
 
-            } catch(err) {
+
+            } catch (err) {
+
 
                 console.error(
                     "[welcome error]",
                     err
                 );
 
+
             }
+
 
         }
 
@@ -269,49 +323,31 @@ module.exports = {
 
 
         await createLog(
-
             member.guild,
-
             {
 
                 type: "member",
 
                 action: "Member Joined",
 
-                target: member.id,
+                target:
+                    member.id,
+
 
                 description:
-                `${member.user.tag} joined the server.`,
+                    `${member.user.tag} joined the server.`,
 
-                severity: "normal",
+
+                severity:
+                    "normal",
+
 
                 logChannel:
-                channels.members.join,
-
-                color: 0x808080,
-
-
-                fields: [
-
-                    {
-                        name: "User",
-
-                        value:
-                        `${member.user.tag} (${member.id})`
-                    },
-
-                    {
-                        name: "Account Created",
-
-                        value:
-                        `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`
-                    }
-
-                ]
+                    channels.members.join
 
             }
-
-        ).catch(() => {});
+        )
+        .catch(() => {});
 
 
     }
