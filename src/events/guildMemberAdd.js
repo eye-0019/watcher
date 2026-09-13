@@ -1,3 +1,4 @@
+const { EmbedBuilder } = require("discord.js");
 const { createLog } = require("../logger/logger");
 const channels = require("../logger/channels");
 
@@ -86,9 +87,7 @@ module.exports = {
                     .catch(() => null);
 
 
-
                 if (inviterMember) {
-
 
                     if (count >= 1 && gifRole) {
 
@@ -106,7 +105,6 @@ module.exports = {
                             });
 
                     }
-
 
 
                     if (count >= 2 && picRole) {
@@ -146,7 +144,7 @@ module.exports = {
 
 
         // =====================================================
-        // Welcome message
+        // Welcome message (Embed)
         // =====================================================
 
         const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
@@ -172,12 +170,43 @@ module.exports = {
                         ];
 
 
-                    await welcomeChannel.send(
+                    const message =
                         random.replace(
                             /{id}/g,
                             member.id
+                        );
+
+
+                    const embed = new EmbedBuilder()
+                        .setColor(0x57f287)
+                        .setTitle("👋 New Member")
+                        .setDescription(message)
+                        .addFields(
+                            {
+                                name: "User",
+                                value: `${member} (${member.id})`,
+                                inline: false
+                            },
+                            {
+                                name: "Account Created",
+                                value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
+                                inline: true
+                            },
+                            {
+                                name: "Member Count",
+                                value: `${member.guild.memberCount}`,
+                                inline: true
+                            }
                         )
-                    );
+                        .setThumbnail(
+                            member.user.displayAvatarURL()
+                        )
+                        .setTimestamp();
+
+
+                    await welcomeChannel.send({
+                        embeds: [embed]
+                    });
 
                 }
 
